@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AlertTriangle, ArrowLeft, CheckCircle, FileText, ExternalLink } from "lucide-react"
 import { ModuleComparisonModal } from "./module-comparison-modal"
-import { PayrollCompletionSummary } from "@/components/payroll-completion-summary"
 
 const tabData = {
   accounts: {
@@ -364,7 +363,7 @@ export default function MigrationReport() {
             <CardContent className="pt-6">
               <Tabs defaultValue="summary" value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="mb-6 flex flex-wrap h-auto gap-1 bg-muted/40 p-1 rounded-xl border border-border/50">
-                  {["summary", "accounts", "customers", "vendors", "items", "invoices", "bills", "invoicePayments", "billPayments", "creditNotes", "billCredits", "journals", "payroll", "warnings"].map((tab) => (
+                  {["summary", "accounts", "customers", "vendors", "items", "invoices", "bills", "invoicePayments", "billPayments", "creditNotes", "billCredits", "journals", "warnings"].map((tab) => (
                     <TabsTrigger
                       key={tab}
                       value={tab}
@@ -427,8 +426,6 @@ export default function MigrationReport() {
                     </div>
                   </div>
 
-                  <PayrollCompletionSummary />
-
                   {migrationData.warnings.length > 0 && (
                     <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 backdrop-blur-sm">
                       <div className="flex items-start gap-3">
@@ -467,85 +464,6 @@ export default function MigrationReport() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="payroll" className="space-y-6 mt-4">
-                  <div className="rounded-xl border border-border/50 bg-card/40 p-6 backdrop-blur-sm">
-                    <h3 className="mb-4 text-base font-semibold text-foreground">Migrated Employees</h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse text-sm">
-                        <thead>
-                          <tr className="border-b border-border/50 text-muted-foreground">
-                            <th className="px-4 py-3 text-left font-semibold text-xs uppercase tracking-wider">Name</th>
-                            <th className="px-4 py-3 text-left font-semibold text-xs uppercase tracking-wider">Role</th>
-                            <th className="px-4 py-3 text-left font-semibold text-xs uppercase tracking-wider">Super Fund</th>
-                            <th className="px-4 py-3 text-left font-semibold text-xs uppercase tracking-wider">Type</th>
-                            <th className="px-4 py-3 text-right font-semibold text-xs uppercase tracking-wider">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {[
-                            { name: "Bryce Guignon",  role: "Director",   type: "Full-time", super: "AustralianSuper" },
-                            { name: "Sarah Mitchell", role: "Accountant",  type: "Full-time", super: "AustralianSuper" },
-                            { name: "James Tan",      role: "Developer",   type: "Part-time", super: "REST Super"      },
-                            { name: "Emily Chen",     role: "Manager",     type: "Full-time", super: "AustralianSuper" },
-                            { name: "Tom Nguyen",     role: "Analyst",     type: "Full-time", super: "Cbus"            },
-                            { name: "Lisa Park",      role: "Designer",    type: "Casual",    super: "Sunsuper"        },
-                            { name: "Mark O'Brien",   role: "Sales",       type: "Full-time", super: "REST Super"      },
-                          ].map((emp) => (
-                            <tr key={emp.name} className="border-b border-border/30 hover:bg-muted/5 transition-colors">
-                              <td className="px-4 py-3 font-medium text-foreground">{emp.name}</td>
-                              <td className="px-4 py-3 text-muted-foreground">{emp.role}</td>
-                              <td className="px-4 py-3 text-muted-foreground">{emp.super}</td>
-                              <td className="px-4 py-3 text-muted-foreground">{emp.type}</td>
-                              <td className="px-4 py-3 text-right">
-                                <span className="inline-flex items-center rounded-full bg-green-500/10 border border-green-500/20 px-2.5 py-0.5 text-xs font-semibold text-green-500">
-                                  Imported
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  <div className="rounded-xl border border-border/50 bg-card/40 p-6 backdrop-blur-sm">
-                    <h3 className="mb-4 text-base font-semibold text-foreground">Payroll Modules Status</h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse text-sm">
-                        <thead>
-                          <tr className="border-b border-border/50 text-muted-foreground">
-                            <th className="px-4 py-3 text-left font-semibold text-xs uppercase tracking-wider">Module Name</th>
-                            <th className="px-4 py-3 text-left font-semibold text-xs uppercase tracking-wider">Records</th>
-                            <th className="px-4 py-3 text-right font-semibold text-xs uppercase tracking-wider">Status</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {[
-                            { name: "Employee Basic Details", count: "7/7 records" },
-                            { name: "Employment Details", count: "7/7 records" },
-                            { name: "Superannuation Details", count: "7/7 records" },
-                            { name: "Tax Details", count: "7/7 records" },
-                            { name: "Leave Balances", count: "3 types" },
-                            { name: "Bank Allocations", count: "7 accounts" },
-                            { name: "YTD Balances", count: "164 slips" },
-                            { name: "Pay Templates", count: "4 templates" },
-                            { name: "Pay Items", count: "19 items" },
-                          ].map((mod) => (
-                            <tr key={mod.name} className="border-b border-border/30 hover:bg-muted/5 transition-colors">
-                              <td className="px-4 py-3 font-medium text-foreground">{mod.name}</td>
-                              <td className="px-4 py-3 text-muted-foreground">{mod.count}</td>
-                              <td className="px-4 py-3 text-right">
-                                <span className="inline-flex items-center rounded-full bg-green-500/10 border border-green-500/20 px-2.5 py-0.5 text-xs font-semibold text-green-500">
-                                  Imported
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </TabsContent>
 
                 {Object.entries(tabData).map(([key, data]) => (
                   <TabsContent key={key} value={key} className="space-y-6 mt-4">

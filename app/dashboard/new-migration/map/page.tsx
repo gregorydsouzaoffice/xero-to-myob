@@ -21,7 +21,7 @@ export default function MapData() {
   }, [])
 
   const handleNextStep = () => {
-    router.push(`/dashboard/new-migration/payroll-mapping?destination=${destination}`)
+    router.push(`/dashboard/new-migration/validate?destination=${destination}`)
   }
 
   const handlePrevStep = () => {
@@ -720,7 +720,7 @@ export default function MapData() {
                 onClick={handleNextStep}
                 className="google-button-primary"
               >
-                Continue to Payroll Mapping <ArrowRight className="ml-2 h-4 w-4" />
+                Continue to Validation <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </CardFooter>
           </Card>

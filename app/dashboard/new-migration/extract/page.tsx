@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { ArrowLeft, ArrowRight, CheckCircle, Database, FileText, Map, CheckSquare, Upload } from "lucide-react"
-import { PayrollSnapshot } from "@/components/payroll-snapshot"
 
 export default function ExtractData() {
   const router = useRouter()
@@ -225,7 +224,6 @@ export default function ExtractData() {
                   </table>
                 </div>
               </div>
-              <PayrollSnapshot />
             </CardContent>
             <CardFooter className="flex justify-between border-t border-border/30 pt-6 mt-4">
               <Button

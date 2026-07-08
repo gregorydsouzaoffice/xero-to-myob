@@ -18,7 +18,6 @@ import {
   AlertTriangle,
   XCircle,
 } from "lucide-react"
-import { PayrollMigrationPhase } from "@/components/payroll-migration-phase"
 
 // Data categories to migrate
 const dataCategories = [
@@ -114,7 +113,7 @@ export default function ImportProgress() {
   const [logs, setLogs] = useState([])
   const [dataElements, setDataElements] = useState(createDataElements(15))
   const [showInitialAnimation, setShowInitialAnimation] = useState(true)
-  const [payrollDone, setPayrollDone] = useState(false)
+  const payrollDone = isComplete
 
   const addLog = (message, type = "info") => {
     setLogs((prev) => [
@@ -535,10 +534,6 @@ export default function ImportProgress() {
                             })}
                           </div>
                         </div>
-                        <PayrollMigrationPhase
-                          accountingComplete={isComplete}
-                          onComplete={() => setPayrollDone(true)}
-                        />
                       </div>
                     )}
                   </CardContent>
