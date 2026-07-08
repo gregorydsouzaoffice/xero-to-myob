@@ -103,7 +103,7 @@ export default function Home() {
               <div className="p-2 rounded-xl bg-primary/10">
                 <Database className="h-5 w-5 text-primary" />
               </div>
-              <p className="google-body-medium text-muted-foreground">© 2025 MYOB. All rights reserved.</p>
+              <p className="google-body-medium text-muted-foreground">© 2026 MYOB. All rights reserved.</p>
             </div>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-sm text-muted-foreground/70">Powered by</span>

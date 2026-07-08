@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -54,67 +54,67 @@ const tabData = {
     title: "Invoices",
     headers: ["Invoice #", "Customer", "Date", "Amount", "Status"],
     rows: [
-      ["INV-2024-001", "Amazon", "09/07/2024", "£2,500.00", "Imported"],
-      ["INV-2024-002", "Azure Training", "09/07/2024", "£1,850.00", "Imported"],
-      ["INV-2024-003", "DIRECTOR", "09/07/2024", "£3,200.00", "Imported"],
-      ["INV-2024-004", "EE LIMITED", "09/07/2024", "£1,750.00", "Imported"],
+      ["INV-2024-001", "Amazon", "09/07/2026", "£2,500.00", "Imported"],
+      ["INV-2024-002", "Azure Training", "09/07/2026", "£1,850.00", "Imported"],
+      ["INV-2024-003", "DIRECTOR", "09/07/2026", "£3,200.00", "Imported"],
+      ["INV-2024-004", "EE LIMITED", "09/07/2026", "£1,750.00", "Imported"],
     ]
   },
   bills: {
     title: "Bills",
     headers: ["Bill #", "Vendor", "Date", "Amount", "Status"],
     rows: [
-      ["BILL-2024-001", "Office Supplies Ltd", "09/07/2024", "£450.00", "Imported"],
-      ["BILL-2024-002", "Tech Solutions Inc", "09/07/2024", "£1,200.00", "Imported"],
-      ["BILL-2024-003", "Marketing Agency", "09/07/2024", "£850.00", "Imported"],
-      ["BILL-2024-004", "Legal Services", "09/07/2024", "£2,100.00", "Imported"],
+      ["BILL-2024-001", "Office Supplies Ltd", "09/07/2026", "£450.00", "Imported"],
+      ["BILL-2024-002", "Tech Solutions Inc", "09/07/2026", "£1,200.00", "Imported"],
+      ["BILL-2024-003", "Marketing Agency", "09/07/2026", "£850.00", "Imported"],
+      ["BILL-2024-004", "Legal Services", "09/07/2026", "£2,100.00", "Imported"],
     ]
   },
   invoicePayments: {
     title: "Invoice Payments",
     headers: ["Payment #", "Invoice", "Date", "Amount", "Status"],
     rows: [
-      ["PAY-2024-001", "INV-2024-001", "09/07/2024", "£2,500.00", "Imported"],
-      ["PAY-2024-002", "INV-2024-002", "09/07/2024", "£1,850.00", "Imported"],
-      ["PAY-2024-003", "INV-2024-003", "09/07/2024", "£3,200.00", "Imported"],
-      ["PAY-2024-004", "INV-2024-004", "09/07/2024", "£1,750.00", "Imported"],
+      ["PAY-2024-001", "INV-2024-001", "09/07/2026", "£2,500.00", "Imported"],
+      ["PAY-2024-002", "INV-2024-002", "09/07/2026", "£1,850.00", "Imported"],
+      ["PAY-2024-003", "INV-2024-003", "09/07/2026", "£3,200.00", "Imported"],
+      ["PAY-2024-004", "INV-2024-004", "09/07/2026", "£1,750.00", "Imported"],
     ]
   },
   billPayments: {
     title: "Bill Payments",
     headers: ["Payment #", "Bill", "Date", "Amount", "Status"],
     rows: [
-      ["BPAY-2024-001", "BILL-2024-001", "09/07/2024", "£450.00", "Imported"],
-      ["BPAY-2024-002", "BILL-2024-002", "09/07/2024", "£1,200.00", "Imported"],
-      ["BPAY-2024-003", "BILL-2024-003", "09/07/2024", "£850.00", "Imported"],
-      ["BPAY-2024-004", "BILL-2024-004", "09/07/2024", "£2,100.00", "Imported"],
+      ["BPAY-2024-001", "BILL-2024-001", "09/07/2026", "£450.00", "Imported"],
+      ["BPAY-2024-002", "BILL-2024-002", "09/07/2026", "£1,200.00", "Imported"],
+      ["BPAY-2024-003", "BILL-2024-003", "09/07/2026", "£850.00", "Imported"],
+      ["BPAY-2024-004", "BILL-2024-004", "09/07/2026", "£2,100.00", "Imported"],
     ]
   },
   creditNotes: {
     title: "Credit Notes",
     headers: ["Credit Note #", "Customer", "Date", "Amount", "Status"],
     rows: [
-      ["CN-2024-001", "Amazon", "09/07/2024", "£150.00", "Imported"],
-      ["CN-2024-002", "Azure Training", "09/07/2024", "£75.00", "Imported"],
-      ["CN-2024-003", "EE LIMITED", "09/07/2024", "£200.00", "Imported"],
+      ["CN-2024-001", "Amazon", "09/07/2026", "£150.00", "Imported"],
+      ["CN-2024-002", "Azure Training", "09/07/2026", "£75.00", "Imported"],
+      ["CN-2024-003", "EE LIMITED", "09/07/2026", "£200.00", "Imported"],
     ]
   },
   billCredits: {
     title: "Bill Credits",
     headers: ["Credit #", "Bill", "Date", "Amount", "Status"],
     rows: [
-      ["BC-2024-001", "BILL-2024-001", "09/07/2024", "£50.00", "Imported"],
-      ["BC-2024-002", "BILL-2024-003", "09/07/2024", "£100.00", "Imported"],
+      ["BC-2024-001", "BILL-2024-001", "09/07/2026", "£50.00", "Imported"],
+      ["BC-2024-002", "BILL-2024-003", "09/07/2026", "£100.00", "Imported"],
     ]
   },
   journals: {
     title: "Journals",
     headers: ["Journal #", "Date", "Description", "Status"],
     rows: [
-      ["JE-2024-001", "09/07/2024", "Month-end accruals", "Imported"],
-      ["JE-2024-002", "09/07/2024", "Depreciation adjustment", "Imported"],
-      ["JE-2024-003", "09/07/2024", "Bank reconciliation", "Imported"],
-      ["JE-2024-004", "09/07/2024", "Tax provision", "Imported"],
+      ["JE-2024-001", "09/07/2026", "Month-end accruals", "Imported"],
+      ["JE-2024-002", "09/07/2026", "Depreciation adjustment", "Imported"],
+      ["JE-2024-003", "09/07/2026", "Bank reconciliation", "Imported"],
+      ["JE-2024-004", "09/07/2026", "Tax provision", "Imported"],
     ]
   }
 }
@@ -126,6 +126,19 @@ export default function MigrationReport() {
     agedReceivable: false,
     agedPayable: false,
   })
+
+  const [startTime, setStartTime] = useState("")
+  const [endTime, setEndTime] = useState("")
+
+  useEffect(() => {
+    const end = new Date()
+    const start = new Date(end.getTime() - (3 * 60 + 25) * 1000) // 3m 25s ago
+    const formatTime = (date: Date) => date.toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    const formatDate = (date: Date) => date.toLocaleDateString("en-GB")
+    
+    setEndTime(`${formatDate(end)} - ${formatTime(end)}`)
+    setStartTime(`${formatDate(start)} - ${formatTime(start)}`)
+  }, [])
 
   const migrationData = {
     completed: {
@@ -384,11 +397,11 @@ export default function MigrationReport() {
                       </div>
                       <div className="grid grid-cols-2 gap-4 border-b border-border/30 pb-2.5 text-sm">
                         <div className="font-medium text-muted-foreground">Start Time</div>
-                        <div className="text-foreground">{new Date().toLocaleDateString("en-GB")} - 10:15:22</div>
+                        <div className="text-foreground">{startTime}</div>
                       </div>
                       <div className="grid grid-cols-2 gap-4 border-b border-border/30 pb-2.5 text-sm">
                         <div className="font-medium text-muted-foreground">End Time</div>
-                        <div className="text-foreground">{new Date().toLocaleDateString("en-GB")} - 10:18:47</div>
+                        <div className="text-foreground">{endTime}</div>
                       </div>
                       <div className="grid grid-cols-2 gap-4 border-b border-border/30 pb-2.5 text-sm">
                         <div className="font-medium text-muted-foreground">Duration</div>
