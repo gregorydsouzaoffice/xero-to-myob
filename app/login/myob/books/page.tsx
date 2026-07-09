@@ -33,9 +33,11 @@ export default function MYOBBooks() {
   const searchParams = useSearchParams()
   const source = searchParams.get("source") || "xero"
   const [searchTerm, setSearchTerm] = useState("MMC New")
+  const [selectedBook, setSelectedBook] = useState<string | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
-  const handleConnect = (bookId: string) => {
-    router.push(`/dashboard/new-migration/connect?source=${source}&destination=myob&myob_connected=true&book=${encodeURIComponent(bookId)}`)
+  const handleConnect = (bookName: string) => {
+    router.push(`/dashboard/new-migration/connect?source=${source}&destination=myob&myob_connected=true&book=${encodeURIComponent(bookName)}`)
   }
 
   const filteredBusinesses = BUSINESSES.filter(b => 
@@ -94,7 +96,10 @@ export default function MYOBBooks() {
                     </div>
                     {/* Business link */}
                     <button
-                      onClick={() => handleConnect(business.name)}
+                      onClick={() => {
+                        setSelectedBook(business.name)
+                        setIsModalOpen(true)
+                      }}
                       className="text-left text-[#5C1D80] hover:text-[#45145f] hover:underline text-sm font-semibold transition-colors flex-grow"
                     >
                       {business.name}
@@ -110,6 +115,35 @@ export default function MYOBBooks() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Confirmation Modal */}
+      {isModalOpen && selectedBook && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-sm w-full p-6 border border-gray-100 animate-in fade-in duration-200">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Confirm Connection</h3>
+            <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+              You are selecting <strong className="text-gray-800 font-semibold">{selectedBook}</strong> to proceed with the migration. Would you like to continue?
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="px-4 py-2 rounded-lg border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setIsModalOpen(false)
+                  handleConnect(selectedBook)
+                }}
+                className="px-4 py-2 rounded-lg bg-[#5C1D80] text-white text-sm font-semibold hover:bg-[#45145f] transition-colors"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
