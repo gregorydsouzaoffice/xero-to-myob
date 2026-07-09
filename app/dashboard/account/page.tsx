@@ -36,17 +36,17 @@ export default function AccountPage() {
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name</Label>
-                  <Input id="firstName" defaultValue="Luke" />
+                  <Input id="firstName" defaultValue="Kylie" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">Last Name</Label>
-                  <Input id="lastName" defaultValue="Sorbara" />
+                  <Input id="lastName" defaultValue="Farr" />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
-                <Input id="email" type="email" defaultValue="luke.sorbara@myob.com" />
+                <Input id="email" type="email" defaultValue="kylie.farr@myob.com" />
               </div>
 
               <div className="space-y-2">

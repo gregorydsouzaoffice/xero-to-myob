@@ -61,7 +61,7 @@ export default function MYOBBooks() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-sm text-gray-600">Luke & Co</div>
+                    <div className="text-sm text-gray-600">Kylie & Co</div>
                     <div className="font-medium text-gray-900">MMC New Tool - Book 1</div>
                   </div>
                   <div className="flex items-center text-sm text-gray-500">
@@ -81,7 +81,7 @@ export default function MYOBBooks() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-sm text-gray-600">Luke & Co</div>
+                    <div className="text-sm text-gray-600">Kylie & Co</div>
                     <div className="font-medium text-gray-900">MMC New Tool - Book 2</div>
                   </div>
                   <div className="flex items-center text-sm text-gray-500">

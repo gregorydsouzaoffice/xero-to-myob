@@ -71,7 +71,7 @@ export default function DashboardLayout({
                   <AvatarImage src="/placeholder.svg" />
                   <AvatarFallback className="bg-primary text-primary-foreground text-xs font-medium">LS</AvatarFallback>
                 </Avatar>
-                <span className="hidden md:inline font-medium">Luke Sorbara</span>
+                <span className="hidden md:inline font-medium">Kylie Farr</span>
                 <ChevronDown className="h-4 w-4 opacity-60" />
               </Button>
             </DropdownMenuTrigger>

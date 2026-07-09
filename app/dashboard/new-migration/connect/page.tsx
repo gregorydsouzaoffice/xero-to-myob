@@ -248,7 +248,7 @@ export default function ConnectAccounts() {
                     </div>
                     <div className="rounded-xl border border-border/45 bg-muted/20 backdrop-blur-sm p-3.5">
                       <div className="text-xs text-muted-foreground">Connected as:</div>
-                      <div className="font-semibold text-sm text-foreground mt-0.5">{"luke.sorbara@myob.com"}</div>
+                      <div className="font-semibold text-sm text-foreground mt-0.5">{"kylie.farr@myob.com"}</div>
                     </div>
                   </CardContent>
                   <CardFooter className="pt-2">
@@ -288,7 +288,7 @@ export default function ConnectAccounts() {
                     </div>
                     <div className="rounded-xl border border-border/45 bg-muted/20 backdrop-blur-sm p-3.5">
                       <div className="text-xs text-muted-foreground">Connected as:</div>
-                      <div className="font-semibold text-sm text-foreground mt-0.5">luke.sorbara@myob.com</div>
+                      <div className="font-semibold text-sm text-foreground mt-0.5">kylie.farr@myob.com</div>
                     </div>
                   </CardContent>
                   <CardFooter className="pt-2">
