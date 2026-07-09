@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Search, User } from "@/app/components/icons"
 import Link from "next/link"
+import MYOBLogo from "@/app/components/mmc-logo"
 
 export default function MYOBBooks() {
   const router = useRouter()
@@ -24,6 +25,9 @@ export default function MYOBBooks() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-4">
       <Card className="w-full max-w-lg bg-white shadow-xl border-0">
         <CardHeader className="text-center pb-6">
+          <div className="mx-auto mb-6 flex justify-center">
+            <MYOBLogo size="sm" />
+          </div>
           <h1 className="text-2xl font-semibold text-gray-900">Select a book</h1>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -39,10 +43,10 @@ export default function MYOBBooks() {
           </div>
 
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="bg-blue-50 text-blue-600 border-blue-200">
+            <Button variant="outline" size="sm" className="bg-purple-50 text-purple-600 border-purple-200 hover:bg-purple-100 hover:text-purple-700">
               Active
             </Button>
-            <Button variant="outline" size="sm" className="text-gray-600 bg-transparent">
+            <Button variant="outline" size="sm" className="text-gray-600 bg-transparent hover:bg-gray-50">
               Inactive
             </Button>
           </div>
@@ -54,7 +58,7 @@ export default function MYOBBooks() {
               <div
                 className={`p-4 rounded-lg border cursor-pointer transition-colors ${
                   selectedBook === "mmc-new-tool-1"
-                    ? "border-blue-500 bg-blue-50"
+                    ? "border-purple-500 bg-purple-50"
                     : "border-gray-200 hover:border-gray-300"
                 }`}
                 onClick={() => setSelectedBook("mmc-new-tool-1")}
@@ -74,7 +78,7 @@ export default function MYOBBooks() {
               <div
                 className={`p-4 rounded-lg border cursor-pointer transition-colors ${
                   selectedBook === "mmc-new-tool-2"
-                    ? "border-blue-500 bg-blue-50"
+                    ? "border-purple-500 bg-purple-50"
                     : "border-gray-200 hover:border-gray-300"
                 }`}
                 onClick={() => setSelectedBook("mmc-new-tool-2")}
@@ -94,10 +98,10 @@ export default function MYOBBooks() {
           </div>
 
           <div className="text-center space-y-2 text-sm">
-            <Link href="#" className="block text-blue-600 hover:underline">
+            <Link href="#" className="block text-purple-600 hover:underline hover:text-purple-700 font-medium">
               Manage your subscriptions in Portal ↗
             </Link>
-            <Link href="#" className="block text-blue-600 hover:underline">
+            <Link href="#" className="block text-purple-600 hover:underline hover:text-purple-700 font-medium">
               Don't see your book here? ↗
             </Link>
           </div>
@@ -105,7 +109,7 @@ export default function MYOBBooks() {
           <Button
             onClick={handleConnect}
             disabled={!selectedBook}
-            className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium disabled:opacity-50"
+            className="w-full h-12 bg-purple-600 hover:bg-purple-700 text-white font-medium disabled:opacity-50"
           >
             Connect to Selected Book
           </Button>

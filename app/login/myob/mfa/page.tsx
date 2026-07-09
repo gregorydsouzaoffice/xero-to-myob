@@ -54,7 +54,7 @@ export default function MYOBMFA() {
           <Button
             onClick={handleContinue}
             disabled={code.length !== 6}
-            className="w-full h-12 bg-gray-600 hover:bg-gray-700 text-white font-medium disabled:opacity-50"
+            className="w-full h-12 bg-purple-600 hover:bg-purple-700 text-white font-medium disabled:opacity-50 shadow-md hover:shadow-lg transition-all"
           >
             Continue
           </Button>
@@ -62,13 +62,13 @@ export default function MYOBMFA() {
           <div className="text-center space-y-4">
             <button
               onClick={handleGoBack}
-              className="flex items-center justify-center text-blue-600 hover:underline text-sm mx-auto"
+              className="flex items-center justify-center text-purple-600 hover:underline text-sm mx-auto font-medium"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
               Go back
             </button>
 
-            <Link href="#" className="block text-blue-600 hover:underline text-sm">
+            <Link href="#" className="block text-purple-600 hover:underline text-sm font-medium">
               Can't access your multi-factor device?
             </Link>
           </div>
@@ -76,11 +76,11 @@ export default function MYOBMFA() {
           <div className="text-xs text-gray-500 text-center space-y-2">
             <p>
               By continuing, you agree to our{" "}
-              <Link href="#" className="text-blue-600 underline">
+              <Link href="#" className="text-purple-600 underline font-medium">
                 Terms of Service
               </Link>{" "}
               and{" "}
-              <Link href="#" className="text-blue-600 underline">
+              <Link href="#" className="text-purple-600 underline font-medium">
                 Privacy Policy
               </Link>
             </p>

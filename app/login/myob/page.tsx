@@ -39,7 +39,7 @@ export default function MYOBLogin() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-12 bg-blue-50 border-blue-100 focus:border-blue-500 focus:ring-blue-500"
+                className="h-12 bg-purple-50 border-purple-100 focus:border-purple-500 focus:ring-purple-500"
               />
             </div>
 
@@ -50,7 +50,7 @@ export default function MYOBLogin() {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-12 bg-blue-50 border-blue-100 focus:border-blue-500 focus:ring-blue-500 pr-10"
+                  className="h-12 bg-purple-50 border-purple-100 focus:border-purple-500 focus:ring-purple-500 pr-10"
                 />
                 <button
                   type="button"
@@ -65,7 +65,7 @@ export default function MYOBLogin() {
 
           <Button
             onClick={handleLogin}
-            className="w-full h-12 bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white font-medium"
+            className="w-full h-12 bg-purple-600 hover:bg-purple-700 text-white font-medium shadow-md hover:shadow-lg transition-all"
           >
             Continue
           </Button>
@@ -92,11 +92,11 @@ export default function MYOBLogin() {
           <div className="text-center space-y-2 text-sm">
             <div>
               <span className="text-gray-600">New to MYOB? </span>
-              <Link href="#" className="text-blue-600 hover:underline font-medium">
+              <Link href="#" className="text-purple-600 hover:underline font-medium">
                 Create a new account
               </Link>
             </div>
-            <Link href="#" className="block text-blue-600 hover:underline">
+            <Link href="#" className="block text-purple-600 hover:underline font-medium">
               Forgotten password
             </Link>
           </div>
