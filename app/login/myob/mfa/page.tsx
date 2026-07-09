@@ -5,8 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { ArrowLeft } from "@/app/components/icons"
-import Link from "next/link"
 import MYOBLogo from "@/app/components/mmc-logo"
 
 export default function MYOBMFA() {
@@ -16,81 +14,68 @@ export default function MYOBMFA() {
   const [code, setCode] = useState("")
 
   const handleContinue = () => {
-    // Simulate MFA verification
     router.push(`/login/myob/books?source=${source}`)
   }
 
-  const handleGoBack = () => {
-    router.back()
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-white shadow-xl border-0">
-        <CardHeader className="text-center pb-8">
-          <div className="mx-auto mb-6">
+    <div className="min-h-screen bg-[#F0F0F4] flex items-center justify-center p-4">
+      <Card className="w-full max-w-md bg-white shadow-xl border-0 rounded-2xl p-6 md:p-8">
+        <CardHeader className="text-center pb-4">
+          <div className="mx-auto flex justify-center">
             <MYOBLogo size="sm" />
           </div>
-          <h1 className="text-2xl font-semibold text-gray-900">Multi-factor authentication</h1>
-          <p className="text-gray-600 mt-4">
-            Open the authentication app on your device to view authentication code and enter it here.
+          <h2 className="text-xl md:text-2xl font-semibold text-gray-800 mt-4">Two factor authentication</h2>
+          <p className="text-xs md:text-sm text-gray-500 mt-3 leading-relaxed">
+            We've sent an authentication code to your email <br />
+            <span className="font-medium text-gray-700">- ****@mmcc**********</span>
           </p>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              6-digit code from the authentication app
-            </label>
+
+        <CardContent className="p-0 mt-2 space-y-5">
+          {/* Read-only email box */}
+          <div className="w-full bg-[#EBEBEE] text-gray-600 text-center py-3 rounded-lg text-sm font-medium border border-gray-200/50 select-none">
+            ****@mmcc**********
+          </div>
+
+          {/* Floating label input field */}
+          <div className="relative mt-6 mb-4">
             <Input
               type="text"
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              placeholder="Enter 6-digit code"
-              className="h-12 text-center text-lg tracking-widest"
-              maxLength={6}
+              className="h-12 border-gray-300 rounded focus:border-[#5C1D80] focus:ring-0 focus:ring-offset-0 text-sm bg-transparent px-3.5 pt-2"
+              placeholder=""
+              maxLength={8}
             />
+            <label className="absolute left-3 -top-2 bg-white px-1 text-[11px] font-medium text-purple-700">
+              Enter your authentication code*
+            </label>
           </div>
 
+          {/* Verify button */}
           <Button
             onClick={handleContinue}
-            disabled={code.length !== 6}
-            className="w-full h-12 bg-purple-600 hover:bg-purple-700 text-white font-medium disabled:opacity-50 shadow-md hover:shadow-lg transition-all"
+            disabled={code.length < 4}
+            className="w-full h-12 bg-[#5C1D80] hover:bg-[#45145f] text-white font-semibold rounded-lg text-sm shadow transition-colors disabled:opacity-50"
           >
-            Continue
+            Verify code
           </Button>
 
-          <div className="text-center space-y-4">
-            <button
-              onClick={handleGoBack}
-              className="flex items-center justify-center text-purple-600 hover:underline text-sm mx-auto font-medium"
-            >
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Go back
-            </button>
-
-            <Link href="#" className="block text-purple-600 hover:underline text-sm font-medium">
-              Can't access your multi-factor device?
-            </Link>
-          </div>
-
-          <div className="text-xs text-gray-500 text-center space-y-2">
-            <p>
-              By continuing, you agree to our{" "}
-              <Link href="#" className="text-purple-600 underline font-medium">
-                Terms of Service
-              </Link>{" "}
-              and{" "}
-              <Link href="#" className="text-purple-600 underline font-medium">
-                Privacy Policy
-              </Link>
-            </p>
+          {/* Links */}
+          <div className="text-center text-sm text-gray-600 mt-4 space-y-5">
+            <div>
+              Didn't receive an email?{" "}
+              <button className="text-[#5C1D80] hover:underline font-semibold">
+                Resend
+              </button>
+            </div>
+            <div>
+              <button className="text-[#5C1D80] hover:underline text-sm font-semibold">
+                Try another method
+              </button>
+            </div>
           </div>
         </CardContent>
-
-        <div className="text-center pb-6">
-          <MYOBLogo size="sm" className="opacity-60" />
-          <p className="text-xs text-gray-500 mt-1">Made for every small business</p>
-        </div>
       </Card>
     </div>
   )
