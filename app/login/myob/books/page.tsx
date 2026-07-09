@@ -14,8 +14,8 @@ interface Business {
 }
 
 const BUSINESSES: Business[] = [
-  { id: "mmc-new-tool-1", name: "Kylie & Co - Book 1", initials: "KC" },
-  { id: "mmc-new-tool-2", name: "Kylie & Co - Book 2", initials: "KC" },
+  { id: "mmc-new-tool-1", name: "MMC New Tool - Book 1", initials: "MN" },
+  { id: "mmc-new-tool-2", name: "MMC New Tool - Book 2", initials: "MN" },
   { id: "alc-family-trust", name: "The Trustee for ALC Family Trust", initials: "TT" },
   { id: "empty-file", name: "#Empty File", initials: "#E" },
   { id: "gold-maintenance", name: "GOLD MAINTENANCE AND CARPENTRY PTY LTD", initials: "GO" },
