@@ -157,7 +157,7 @@ export default function NewMigrationPage() {
           <Button
             onClick={handleContinue}
             disabled={!selectedSource || !selectedDestination}
-            className="rounded-lg bg-gradient-to-r from-red-600 via-red-500 to-red-700 hover:opacity-90 transition-opacity"
+            className="premium-button rounded-lg"
           >
             Continue <ArrowRight className="ml-2 h-4 w-4" />
           </Button>

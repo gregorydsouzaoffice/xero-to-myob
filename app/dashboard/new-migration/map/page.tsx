@@ -210,6 +210,18 @@ export default function MapData() {
                     Items
                   </TabsTrigger>
                   <TabsTrigger
+                    value="sales-orders"
+                    className="rounded-lg data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm whitespace-nowrap"
+                  >
+                    Sales Orders
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="purchase-orders"
+                    className="rounded-lg data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm whitespace-nowrap"
+                  >
+                    Purchase Orders
+                  </TabsTrigger>
+                  <TabsTrigger
                     value="invoices"
                     className="rounded-lg data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm whitespace-nowrap"
                   >
@@ -250,6 +262,12 @@ export default function MapData() {
                     className="rounded-lg data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm whitespace-nowrap"
                   >
                     Journals
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="attachments"
+                    className="rounded-lg data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm whitespace-nowrap"
+                  >
+                    Attachments
                   </TabsTrigger>
                 </TabsList>
 
@@ -395,6 +413,92 @@ export default function MapData() {
                         { xero: "Item Code", myob: "Item Code" },
                         { xero: "Description", myob: "Description" },
                         { xero: "Unit Price", myob: "Unit Price" },
+                      ].map((field, index) => (
+                        <div
+                          key={index}
+                          className={`grid grid-cols-5 gap-4 items-center py-3 text-sm border-b border-border/20 last:border-0`}
+                        >
+                          <div className="col-span-2 flex items-center">
+                            <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mr-2.5"></div>
+                            {field.xero}
+                          </div>
+                          <div className="col-span-2 flex items-center">
+                            <div className="h-1.5 w-1.5 rounded-full bg-purple-500 mr-2.5"></div>
+                            {field.myob}
+                          </div>
+                          <div className="text-right text-green-600 font-medium flex items-center justify-end text-xs">
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Mapped
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="sales-orders" className="space-y-4">
+                  <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-md p-6">
+                    <h3 className="mb-6 text-base font-semibold flex items-center text-foreground">
+                      <Map className="mr-2.5 h-5 w-5 text-primary" />
+                      Field Mapping
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-5 gap-4 border-b border-border/30 pb-3 font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                        <div className="col-span-2">Xero Field</div>
+                        <div className="col-span-2">{destinationDetails.name} Field</div>
+                        <div className="text-right">Status</div>
+                      </div>
+
+                      {[
+                        { xero: "SO Number", myob: "Sales Order Ref" },
+                        { xero: "Customer", myob: "Customer" },
+                        { xero: "Date", myob: "Date" },
+                        { xero: "Expiry Date", myob: "Expiry Date" },
+                        { xero: "Line Items", myob: "Line Items" },
+                        { xero: "Total Amount", myob: "Total Amount" },
+                      ].map((field, index) => (
+                        <div
+                          key={index}
+                          className={`grid grid-cols-5 gap-4 items-center py-3 text-sm border-b border-border/20 last:border-0`}
+                        >
+                          <div className="col-span-2 flex items-center">
+                            <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mr-2.5"></div>
+                            {field.xero}
+                          </div>
+                          <div className="col-span-2 flex items-center">
+                            <div className="h-1.5 w-1.5 rounded-full bg-purple-500 mr-2.5"></div>
+                            {field.myob}
+                          </div>
+                          <div className="text-right text-green-600 font-medium flex items-center justify-end text-xs">
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Mapped
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="purchase-orders" className="space-y-4">
+                  <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-md p-6">
+                    <h3 className="mb-6 text-base font-semibold flex items-center text-foreground">
+                      <Map className="mr-2.5 h-5 w-5 text-primary" />
+                      Field Mapping
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-5 gap-4 border-b border-border/30 pb-3 font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                        <div className="col-span-2">Xero Field</div>
+                        <div className="col-span-2">{destinationDetails.name} Field</div>
+                        <div className="text-right">Status</div>
+                      </div>
+
+                      {[
+                        { xero: "PO Number", myob: "Purchase Order Ref" },
+                        { xero: "Supplier", myob: "Vendor" },
+                        { xero: "Date", myob: "Date" },
+                        { xero: "Delivery Date", myob: "Delivery Date" },
+                        { xero: "Line Items", myob: "Line Items" },
+                        { xero: "Total Amount", myob: "Total Amount" },
                       ].map((field, index) => (
                         <div
                           key={index}
@@ -684,6 +788,47 @@ export default function MapData() {
                         { xero: "Date", myob: "Date" },
                         { xero: "Reference", myob: "Reference" },
                         { xero: "Journal Lines", myob: "Journal Lines" },
+                      ].map((field, index) => (
+                        <div
+                          key={index}
+                          className={`grid grid-cols-5 gap-4 items-center py-3 text-sm border-b border-border/20 last:border-0`}
+                        >
+                          <div className="col-span-2 flex items-center">
+                            <div className="h-1.5 w-1.5 rounded-full bg-blue-500 mr-2.5"></div>
+                            {field.xero}
+                          </div>
+                          <div className="col-span-2 flex items-center">
+                            <div className="h-1.5 w-1.5 rounded-full bg-purple-500 mr-2.5"></div>
+                            {field.myob}
+                          </div>
+                          <div className="text-right text-green-600 font-medium flex items-center justify-end text-xs">
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Mapped
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="attachments" className="space-y-4">
+                  <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-md p-6">
+                    <h3 className="mb-6 text-base font-semibold flex items-center text-foreground">
+                      <Map className="mr-2.5 h-5 w-5 text-primary" />
+                      Field Mapping
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-5 gap-4 border-b border-border/30 pb-3 font-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                        <div className="col-span-2">Xero Field</div>
+                        <div className="col-span-2">{destinationDetails.name} Field</div>
+                        <div className="text-right">Status</div>
+                      </div>
+
+                      {[
+                        { xero: "File Name", myob: "File Name" },
+                        { xero: "File Type", myob: "File Type" },
+                        { xero: "File Size", myob: "File Size" },
+                        { xero: "Linked Transaction", myob: "Linked Record" },
                       ].map((field, index) => (
                         <div
                           key={index}

@@ -1,68 +1,33 @@
-"use client"
+const firms = ["KPMG", "Deloitte", "PwC", "EY", "Grant Thornton", "RSM", "BDO", "Mazars"]
 
-import { useEffect, useState } from "react"
-
-interface Logo {
-  id: number
-  src: string
-  alt: string
-}
-
+/**
+ * Seamless marquee: the track holds two identical lists and shifts by exactly
+ * 50% of its own width, so the loop never jumps. Pauses on hover; edges fade
+ * out via .marquee-mask.
+ */
 export default function LogoCarousel() {
-  const logos: Logo[] = [
-    { id: 1, src: "/placeholder.svg?height=40&width=120&text=KPMG", alt: "KPMG" },
-    { id: 2, src: "/placeholder.svg?height=40&width=120&text=Deloitte", alt: "Deloitte" },
-    { id: 3, src: "/placeholder.svg?height=40&width=120&text=PwC", alt: "PwC" },
-    { id: 4, src: "/placeholder.svg?height=40&width=120&text=EY", alt: "Ernst & Young (EY)" },
-    { id: 5, src: "/placeholder.svg?height=40&width=120&text=Grant+Thornton", alt: "Grant Thornton" },
-    { id: 6, src: "/placeholder.svg?height=40&width=120&text=RSM", alt: "RSM" },
-    { id: 7, src: "/placeholder.svg?height=40&width=120&text=BDO", alt: "BDO" },
-    { id: 8, src: "/placeholder.svg?height=40&width=120&text=Mazars", alt: "Mazars" },
-  ]
-
-  const [isClient, setIsClient] = useState(false)
-
-  const TextLogo = ({ text, className }: { text: string; className?: string }) => (
-    <div
-      className={`flex items-center justify-center px-4 py-2 bg-white/10 backdrop-blur-sm rounded-lg border border-white/20 ${className}`}
+  const list = (ariaHidden: boolean) => (
+    <ul
+      aria-hidden={ariaHidden || undefined}
+      className="flex items-center gap-8 pr-8 md:gap-14 md:pr-14"
     >
-      <span className="text-sm font-semibold text-gray-700 tracking-wide">{text}</span>
-    </div>
+      {firms.map((firm) => (
+        <li key={firm} className="flex-shrink-0">
+          <div className="flex items-center justify-center rounded-xl border border-border/60 bg-card px-6 py-3 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
+            <span className="whitespace-nowrap text-sm font-semibold tracking-wide text-muted-foreground transition-colors duration-300 hover:text-primary">
+              {firm}
+            </span>
+          </div>
+        </li>
+      ))}
+    </ul>
   )
 
-  useEffect(() => {
-    setIsClient(true)
-  }, [])
-
-  if (!isClient) {
-    return (
-      <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 lg:gap-16 mt-12">
-        {logos.slice(0, 4).map((logo) => (
-          <div key={logo.id} className="flex items-center justify-center p-4">
-            <div className="h-10 w-32 bg-gray-200 animate-pulse rounded"></div>
-          </div>
-        ))}
-      </div>
-    )
-  }
-
   return (
-    <div className="overflow-hidden w-full mt-12">
-      <div className="flex gap-8 md:gap-12 lg:gap-16 animate-scroll-left">
-        {/* Double the logos to create seamless loop */}
-        {[...logos, ...logos].map((logo, index) => (
-          <div key={`${logo.id}-${index}`} className="flex-shrink-0">
-            <div
-              className="flex items-center justify-center p-4 animate-float"
-              style={{ animationDelay: `${index * 0.2}s` }}
-            >
-              <TextLogo
-                text={logo.alt === "Ernst & Young (EY)" ? "EY" : logo.alt}
-                className="h-10 w-auto opacity-70 hover:opacity-100 transition-all duration-300"
-              />
-            </div>
-          </div>
-        ))}
+    <div className="marquee-mask marquee-paused mt-12 w-full overflow-hidden">
+      <div className="animate-marquee flex w-max">
+        {list(false)}
+        {list(true)}
       </div>
     </div>
   )

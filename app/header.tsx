@@ -1,52 +1,63 @@
 "use client"
-import { Button } from "@/components/ui/button"
+
 import { useEffect, useState } from "react"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 import MYOBLogo from "@/components/mmc-logo"
 
 export default function Header() {
-  const [particles, setParticles] = useState<Array<{ id: number; top: string; left: string; delay: string }>>([])
+  const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
-    // Generate subtle particles for premium feel
-    const newParticles = Array(2)
-      .fill(0)
-      .map((_, i) => ({
-        id: i,
-        top: `${Math.random() * 100}%`,
-        left: `${Math.random() * 100}%`,
-        delay: `${i * 1}s`,
-      }))
-    setParticles(newParticles)
+    const onScroll = () => setScrolled(window.scrollY > 8)
+    onScroll()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
   return (
-    <header className="sticky top-0 z-20 w-full">
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/80 via-accent/60 to-primary/80 animate-premium-shimmer overflow-hidden">
-        <div className="absolute w-[400px] h-[400px] rounded-full bg-primary/20 blur-[60px] -top-[200px] -left-[100px] animate-blob-slow"></div>
-        <div className="absolute w-[300px] h-[300px] rounded-full bg-accent/20 blur-[60px] -top-[100px] right-[20%] animate-blob-slow animation-delay-2000"></div>
-      </div>
+    <header className="sticky top-0 z-50 w-full">
+      {/* Brand hairline: Xero teal → MYOB purple → magenta */}
+      <div className="h-0.5 journey-gradient-bg" />
 
-      <div className="relative backdrop-blur-xl bg-white/10 border-b border-white/20">
-        <div className="container flex h-16 items-center">
-          <div className="mr-4 transition-transform duration-200 hover:scale-105">
-            <MYOBLogo size="md" />
+      <div
+        className={`border-b transition-all duration-300 ${
+          scrolled
+            ? "bg-background/85 backdrop-blur-xl border-border/60 shadow-sm"
+            : "bg-background/60 backdrop-blur-md border-transparent"
+        }`}
+      >
+        <div className="container flex h-16 items-center gap-4">
+          <div className="transition-transform duration-200 hover:scale-105">
+            <MYOBLogo size="sm" />
           </div>
 
-          <div className="flex items-center space-x-2 text-white/70 text-sm">
+          <div className="hidden sm:flex items-center gap-2 border-l border-border/60 pl-4 text-xs text-muted-foreground">
             <span>Powered by</span>
             <img
-              src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-ihUWFePEscYTEzqlHMJoc9mU9oDjxU.png"
+              src="/mmc-convert-logo.png"
               alt="MMC Convert"
-              className="h-6 w-auto opacity-80 hover:opacity-100 transition-opacity duration-200"
+              className="h-5 w-auto opacity-80 transition-opacity duration-200 hover:opacity-100"
             />
           </div>
 
-          <nav className="flex flex-1 items-center justify-end space-x-2">
+          <nav className="flex flex-1 items-center justify-end gap-1">
             <Button
+              asChild
               variant="ghost"
-              className="text-white hover:bg-white/20 rounded-lg px-4 py-2 font-medium transition-all duration-200 hover:scale-105"
+              className="rounded-lg px-4 font-medium text-foreground/70 transition-colors duration-200 hover:bg-primary/5 hover:text-primary"
             >
-              Features
+              <a href="#features">Features</a>
+            </Button>
+            <Button
+              asChild
+              variant="ghost"
+              className="rounded-lg px-4 font-medium text-foreground/70 transition-colors duration-200 hover:bg-primary/5 hover:text-primary"
+            >
+              <a href="#how-it-works">How it works</a>
+            </Button>
+            <Button asChild className="premium-button ml-2 h-9 rounded-full px-5 text-sm font-medium">
+              <Link href="/dashboard/new-migration">Start migration</Link>
             </Button>
           </nav>
         </div>

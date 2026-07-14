@@ -65,6 +65,9 @@ export default function XeroOrganization() {
             <h3 className="font-medium text-gray-900">This will allow access to:</h3>
             <ul className="space-y-2 text-sm text-gray-600">
               <li>• Chart of accounts</li>
+              <li>• Purchase orders</li>
+              <li>• Sales orders</li>
+              <li>• Attachments</li>
               <li>• Contacts</li>
               <li>• Employees</li>
               <li>• Business transactions</li>

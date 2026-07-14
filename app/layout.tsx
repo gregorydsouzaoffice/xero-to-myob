@@ -5,9 +5,8 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.app',
+  title: 'MYOB Migration Tool | Xero to MYOB',
+  description: 'Enterprise-grade Xero to MYOB data migration, powered by MMC Convert',
 }
 
 export default function RootLayout({

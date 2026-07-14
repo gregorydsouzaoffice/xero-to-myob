@@ -201,6 +201,8 @@ export default function ExtractData() {
                         { category: "Customers", records: 87, status: "Ready" },
                         { category: "Suppliers", records: 42, status: "Ready" },
                         { category: "Items", records: 65, status: "Ready" },
+                        { category: "Sales Orders", records: 124, status: "Ready" },
+                        { category: "Purchase Orders", records: 89, status: "Ready" },
                         { category: "Invoices", records: 215, status: "Ready" },
                         { category: "Bills", records: 178, status: "Ready" },
                         { category: "Invoice Payments", records: 142, status: "Ready" },
@@ -208,13 +210,21 @@ export default function ExtractData() {
                         { category: "Credit Notes", records: 23, status: "Ready" },
                         { category: "Bill Credits", records: 15, status: "Ready" },
                         { category: "Journals", records: 64, status: "Ready" },
+                        { category: "Attachments", records: 284, status: "Ready" },
                       ].map((item, index) => (
-                        <tr key={index} className="border-b border-border/30 hover:bg-muted/10 transition-colors">
+                        <tr
+                          key={index}
+                          className="animate-fade-in-up border-b border-border/30 hover:bg-muted/10 transition-colors"
+                          style={{ animationDelay: `${index * 60}ms`, animationFillMode: "both" }}
+                        >
                           <td className="px-4 py-3 font-medium text-foreground">{item.category}</td>
                           <td className="px-4 py-3 text-muted-foreground">{item.records}</td>
                           <td className="px-4 py-3">
                             <div className="flex items-center text-green-600 font-medium">
-                              <div className="h-2 w-2 rounded-full bg-green-500 mr-2 animate-pulse"></div>
+                              <div
+                                className="h-2 w-2 rounded-full bg-green-500 mr-2 animate-pulse"
+                                style={{ animationDelay: `${index * 180}ms` }}
+                              ></div>
                               {item.status}
                             </div>
                           </td>

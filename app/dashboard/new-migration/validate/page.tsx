@@ -33,7 +33,8 @@ export default function ValidateData() {
   useEffect(() => {
     setMounted(true)
 
-    // Simulate validation progress
+    // Simulate validation progress: fast start, jittery decelerating tail —
+    // the way real record-by-record checks behave (never a constant rate)
     const interval = setInterval(() => {
       setValidationProgress((prev) => {
         if (prev >= 100) {
@@ -41,9 +42,11 @@ export default function ValidateData() {
           setValidationComplete(true)
           return 100
         }
-        return prev + 5
+        const remaining = 100 - prev
+        const step = Math.max(0.5, remaining * 0.09) * (0.5 + Math.random())
+        return Math.min(100, prev + step)
       })
-    }, 200)
+    }, 120)
 
     return () => clearInterval(interval)
   }, [])
@@ -133,6 +136,22 @@ export default function ValidateData() {
       status: "warning",
     },
     {
+      category: "Sales Orders",
+      total: 124,
+      valid: 123,
+      warnings: 1,
+      errors: 0,
+      status: "warning",
+    },
+    {
+      category: "Purchase Orders",
+      total: 89,
+      valid: 89,
+      warnings: 0,
+      errors: 0,
+      status: "success",
+    },
+    {
       category: "Invoices",
       total: 215,
       valid: 215,
@@ -164,6 +183,14 @@ export default function ValidateData() {
       errors: 0,
       status: "success",
     },
+    {
+      category: "Attachments",
+      total: 284,
+      valid: 284,
+      warnings: 0,
+      errors: 0,
+      status: "success",
+    },
   ]
 
   // Validation warnings
@@ -184,6 +211,12 @@ export default function ValidateData() {
       id: 3,
       category: "Items",
       message: "Item code mapping was ambiguous. Default code was applied for 'European Sales'.",
+      severity: "warning",
+    },
+    {
+      id: 4,
+      category: "Sales Orders",
+      message: "Sales order 'SO-2026-0043' maps to a customer with missing contact details. Defaulting to customer record.",
       severity: "warning",
     },
   ]
@@ -324,14 +357,14 @@ export default function ValidateData() {
                     <div className="space-y-2">
                       <div className="flex justify-between text-xs font-medium">
                         <div>Validation Progress</div>
-                        <div className="text-primary font-semibold">{validationProgress}%</div>
+                        <div className="text-primary font-semibold">{Math.round(validationProgress)}%</div>
                       </div>
                       <Progress value={validationProgress} className="h-2" />
                     </div>
                   </div>
                 </div>
               ) : (
-                <>
+                <div className="animate-fade-in-up space-y-6">
                   <div className="rounded-2xl border border-border/40 bg-card/50 backdrop-blur-md p-6">
                     <h3 className="mb-4 text-base font-semibold flex items-center text-foreground">
                       <Shield className="mr-2.5 h-5 w-5 text-primary" />
@@ -348,7 +381,8 @@ export default function ValidateData() {
                       {validationResults.map((result, index) => (
                         <div
                           key={index}
-                          className="grid grid-cols-5 gap-4 items-center py-3 text-sm border-b border-border/20 last:border-0 hover:bg-muted/5 transition-colors"
+                          className="animate-fade-in-up grid grid-cols-5 gap-4 items-center py-3 text-sm border-b border-border/20 last:border-0 hover:bg-muted/5 transition-colors"
+                          style={{ animationDelay: `${index * 70}ms`, animationFillMode: "both" }}
                         >
                           <div className="col-span-2 font-medium text-foreground">{result.category}</div>
                           <div className="text-muted-foreground">{result.total}</div>
@@ -425,7 +459,7 @@ export default function ValidateData() {
                       </div>
                     </div>
                   </div>
-                </>
+                </div>
               )}
             </CardContent>
             <CardFooter className="flex justify-between border-t border-border/30 pt-6 mt-4">

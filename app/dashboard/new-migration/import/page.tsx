@@ -1,240 +1,295 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
+import AnimatedCounter from "@/app/components/animated-counter"
 import {
+  AlertTriangle,
   ArrowLeft,
   ArrowRight,
+  Banknote,
+  BookOpen,
+  Building2,
+  Check,
   CheckCircle,
+  ClipboardList,
+  CreditCard,
   Database,
-  FileCheck,
-  FileSpreadsheet,
+  FileMinus,
+  FilePlus,
+  FileText,
+  Package,
+  Paperclip,
+  Receipt,
   RefreshCw,
-  User,
-  ChevronRight,
-  AlertTriangle,
+  ShoppingCart,
+  Users,
   XCircle,
 } from "lucide-react"
 
-// Data categories to migrate
+// Categories grouped by data domain — one curated hue per domain, not a rainbow
 const dataCategories = [
-  {
-    name: "Chart of Accounts",
-    total: 156,
-    icon: <Database className="h-5 w-5" />,
-    color: "bg-blue-500",
-  },
-  {
-    name: "Customers",
-    total: 87,
-    icon: <User className="h-5 w-5" />,
-    color: "bg-green-500",
-  },
-  {
-    name: "Vendors",
-    total: 42,
-    icon: <User className="h-5 w-5" />,
-    color: "bg-purple-500",
-  },
-  {
-    name: "Items",
-    total: 65,
-    icon: <FileCheck className="h-5 w-5" />,
-    color: "bg-cyan-500",
-  },
-  {
-    name: "Invoices",
-    total: 215,
-    icon: <FileSpreadsheet className="h-5 w-5" />,
-    color: "bg-amber-500",
-  },
-  {
-    name: "Bills",
-    total: 178,
-    icon: <FileSpreadsheet className="h-5 w-5" />,
-    color: "bg-red-500",
-  },
-  {
-    name: "Invoice Payments",
-    total: 142,
-    icon: <FileCheck className="h-5 w-5" />,
-    color: "bg-indigo-500",
-  },
-  {
-    name: "Bill Payments",
-    total: 89,
-    icon: <FileCheck className="h-5 w-5" />,
-    color: "bg-pink-500",
-  },
-  {
-    name: "Credit Notes",
-    total: 23,
-    icon: <FileSpreadsheet className="h-5 w-5" />,
-    color: "bg-orange-500",
-  },
-  {
-    name: "Bill Credits",
-    total: 15,
-    icon: <FileSpreadsheet className="h-5 w-5" />,
-    color: "bg-teal-500",
-  },
-  {
-    name: "Journals",
-    total: 62,
-    icon: <FileCheck className="h-5 w-5" />,
-    color: "bg-violet-500",
-  },
+  { name: "Chart of Accounts", total: 156, icon: Database, hex: "#7c3aed" },
+  { name: "Customers", total: 87, icon: Users, hex: "#0e9db8" },
+  { name: "Vendors", total: 42, icon: Building2, hex: "#0e9db8" },
+  { name: "Items", total: 65, icon: Package, hex: "#6366f1" },
+  { name: "Sales Orders", total: 124, icon: ShoppingCart, hex: "#ec4899" },
+  { name: "Purchase Orders", total: 89, icon: ClipboardList, hex: "#a855f7" },
+  { name: "Invoices", total: 215, icon: Receipt, hex: "#ec4899" },
+  { name: "Bills", total: 178, icon: FileText, hex: "#a855f7" },
+  { name: "Invoice Payments", total: 142, icon: CreditCard, hex: "#ec4899" },
+  { name: "Bill Payments", total: 89, icon: Banknote, hex: "#a855f7" },
+  { name: "Credit Notes", total: 23, icon: FileMinus, hex: "#ec4899" },
+  { name: "Bill Credits", total: 15, icon: FilePlus, hex: "#a855f7" },
+  { name: "Journals", total: 62, icon: BookOpen, hex: "#7c3aed" },
+  { name: "Attachments", total: 284, icon: Paperclip, hex: "#64748b" },
 ]
 
-// Create data elements for animation
-const createDataElements = (count) => {
-  return Array(count)
-    .fill(0)
-    .map((_, i) => ({
-      id: i,
-      delay: i * 350, // perfectly staggered intervals to prevent crowding
-      type: i % 3, // alternate document, database, and user icons
-      lane: i % 3, // alternate lanes systematically
-    }))
+const TOTAL_RECORDS = dataCategories.reduce((acc, cat) => acc + cat.total, 0)
+
+// Planned duration per category scales with record count — big categories
+// visibly take longer, the way a real import does
+const plannedDurationMs = dataCategories.map((cat) => Math.min(Math.max(cat.total * 16, 1400), 6500))
+
+// Deliberate "hard moments" the engine hits and recovers from — the drama of
+// a difficult migration, resolved gracefully every time
+const stallScript: Record<string, { at: number; message: string; resolved: string }> = {
+  Vendors: {
+    at: 55,
+    message: "Reconciling duplicate vendor references…",
+    resolved: "Duplicate references reconciled — resuming transfer",
+  },
+  Invoices: {
+    at: 62,
+    message: "Resolving field conflicts in 3 invoices…",
+    resolved: "Field conflicts resolved automatically",
+  },
+  Attachments: {
+    at: 38,
+    message: "Large batch detected — throttling for MYOB API limits…",
+    resolved: "Batch throttled and accepted — resuming at full speed",
+  },
 }
+
+// Phase of the current category, derived from its progress
+const phaseFor = (p: number) => {
+  if (p < 25) return "Fetching from Xero"
+  if (p < 45) return "Transforming records"
+  if (p < 90) return "Writing to MYOB"
+  return "Verifying integrity"
+}
+
+// SVG conduit geometry (viewBox 0 0 640 220): three lanes converge on the
+// core at (320,110), then fan back out to the destination
+const inputPaths = [
+  "M 8 40 C 140 40, 210 110, 320 110",
+  "M 8 110 C 120 110, 220 110, 320 110",
+  "M 8 180 C 140 180, 210 110, 320 110",
+]
+const outputPaths = [
+  "M 320 110 C 430 110, 500 40, 632 40",
+  "M 320 110 C 420 110, 520 110, 632 110",
+  "M 320 110 C 430 110, 500 180, 632 180",
+]
+
+const confettiPieces = Array.from({ length: 14 }, (_, i) => ({
+  id: i,
+  left: 8 + ((i * 6.4) % 84),
+  color: ["#7c3aed", "#ec4899", "#0e9db8", "#a855f7", "#f59e0b"][i % 5],
+  delay: (i % 7) * 90,
+  drift: ((i % 5) - 2) * 48,
+}))
 
 export default function ImportProgress() {
   const [progress, setProgress] = useState(0)
-  const [status, setStatus] = useState("Preparing import...")
+  const [status, setStatus] = useState("Preparing import…")
   const [isComplete, setIsComplete] = useState(false)
   const [currentCategory, setCurrentCategory] = useState(0)
   const [categoryProgress, setCategoryProgress] = useState(0)
-  const [migratedItems, setMigratedItems] = useState({})
-  const [errors, setErrors] = useState([])
-  const [warnings, setWarnings] = useState([])
-  const [logs, setLogs] = useState([])
-  const [dataElements, setDataElements] = useState(createDataElements(15))
+  const [migratedItems, setMigratedItems] = useState<Record<string, number>>({})
+  const [errors] = useState<{ id: number; message: string; category: string }[]>([])
+  const [warnings, setWarnings] = useState<{ id: number; message: string; category: string }[]>([])
+  const [logs, setLogs] = useState<{ id: number; message: string; type: string; time: string }[]>([])
   const [showInitialAnimation, setShowInitialAnimation] = useState(true)
-  const payrollDone = isComplete
+  const [stallMessage, setStallMessage] = useState<string | null>(null)
+  const [elapsed, setElapsed] = useState(0)
+  const [etaSeconds, setEtaSeconds] = useState<number | null>(null)
+  const [reducedMotion, setReducedMotion] = useState(false)
 
-  const addLog = (message, type = "info") => {
+  const logIdRef = useRef(0)
+
+  const addLog = (message: string, type = "info") => {
+    logIdRef.current += 1
     setLogs((prev) => [
-      {
-        id: Date.now(),
-        message,
-        type,
-        time: new Date().toLocaleTimeString(),
-      },
-      ...prev.slice(0, 49),
+      { id: logIdRef.current, message, type, time: new Date().toLocaleTimeString() },
+      ...prev.slice(0, 59),
     ])
   }
 
-  // Initial animation when the page loads
   useEffect(() => {
-    if (showInitialAnimation) {
-      // Add initial logs
-      addLog("Starting migration process...", "info")
-      addLog("Connecting to Xero API...", "info")
-      addLog("Connection established", "success")
-      addLog("Connecting to MYOB API...", "info")
-      addLog("Connection established", "success")
-      addLog("Preparing data for migration...", "info")
+    setReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+  }, [])
 
-      // Hide initial animation after 2 seconds
-      const timer = setTimeout(() => {
-        setShowInitialAnimation(false)
-        addLog("Ready to begin data transfer", "success")
-      }, 2000)
+  // Intro: connection handshake
+  useEffect(() => {
+    if (!showInitialAnimation) return
+    addLog("Starting migration process…", "info")
+    addLog("Connecting to Xero API…", "info")
+    addLog("Connection established", "success")
+    addLog("Connecting to MYOB API…", "info")
+    addLog("Connection established", "success")
+    addLog(`Preparing ${TOTAL_RECORDS.toLocaleString()} records across ${dataCategories.length} categories…`, "info")
 
-      return () => clearTimeout(timer)
-    }
+    const timer = setTimeout(() => {
+      setShowInitialAnimation(false)
+      addLog("Ready to begin data transfer", "success")
+    }, 2000)
+    return () => clearTimeout(timer)
   }, [showInitialAnimation])
 
+  // Elapsed clock
+  useEffect(() => {
+    if (showInitialAnimation || isComplete) return
+    const t = setInterval(() => setElapsed((e) => e + 1), 1000)
+    return () => clearInterval(t)
+  }, [showInitialAnimation, isComplete])
+
+  // Migration engine: record-proportional pacing, decelerating tails,
+  // scripted stalls, phase logging
   useEffect(() => {
     if (showInitialAnimation) return
 
-    let currentCatIdx = 0
-    let catProgress = 0
-    let localMigratedItems: Record<string, number> = {}
-    let localWarnings: { id: number; message: string; category: string }[] = []
+    let catIdx = 0
+    let catProg = 0
+    let stallTicks = 0
+    let pendingResolved = ""
+    const stalledDone = new Set<string>()
+    const phaseLogged = new Set<string>()
+    const localMigrated: Record<string, number> = {}
+    const localWarnings: { id: number; message: string; category: string }[] = []
+    let finalizing = false
 
     const interval = setInterval(() => {
-      const category = dataCategories[currentCatIdx]
-      if (!category) {
-        clearInterval(interval)
-        setIsComplete(true)
-        addLog("Migration complete! All data has been transferred.", "success")
+      if (finalizing) return
+
+      // Mid-migration stall: progress genuinely freezes, then recovers
+      if (stallTicks > 0) {
+        stallTicks -= 1
+        if (stallTicks === 0) {
+          setStallMessage(null)
+          addLog(pendingResolved, "success")
+        }
         return
       }
 
-      // Increment progress
-      catProgress += Math.random() * 6
-      if (catProgress >= 100) {
-        catProgress = 100
+      const category = dataCategories[catIdx]
+      if (!category) return
 
-        // Mark category as complete
-        localMigratedItems[category.name] = category.total
-        setMigratedItems({ ...localMigratedItems })
+      const ticksPlanned = plannedDurationMs[catIdx] / 80
+      let step = (100 / ticksPlanned) * (0.55 + Math.random() * 0.9)
+      if (catProg > 85) step *= 0.5 // decelerating tail, like real I/O
+      const prevProg = catProg
+      catProg = Math.min(100, catProg + step)
 
-        addLog(`Completed migrating ${category.name}`, "success")
+      // Log phase transitions once per category
+      const phase = phaseFor(catProg)
+      const phaseKey = `${category.name}:${phase}`
+      if (!phaseLogged.has(phaseKey)) {
+        phaseLogged.add(phaseKey)
+        addLog(`${phase} — ${category.name.toLowerCase()}`, "info")
+      }
 
-        // Warnings / errors logic
-        if (Math.random() > 0.85 && category.name !== "Chart of Accounts" && localWarnings.length < 3) {
+      // Scripted stall for this category?
+      const stall = stallScript[category.name]
+      if (stall && !stalledDone.has(category.name) && prevProg < stall.at && catProg >= stall.at) {
+        stalledDone.add(category.name)
+        stallTicks = 12 + Math.floor(Math.random() * 8)
+        pendingResolved = stall.resolved
+        setStallMessage(stall.message)
+        addLog(stall.message, "warning")
+        catProg = stall.at
+      }
+
+      if (catProg >= 100) {
+        localMigrated[category.name] = category.total
+        setMigratedItems({ ...localMigrated })
+        addLog(`Completed ${category.name} — ${category.total} records verified`, "success")
+
+        if (Math.random() > 0.8 && catIdx > 0 && localWarnings.length < 3) {
           const warningMessages = [
             `Missing field in ${Math.floor(Math.random() * 5) + 1} ${category.name.toLowerCase()}`,
             `Incomplete data for some ${category.name.toLowerCase()}`,
             `Non-standard format detected in ${category.name.toLowerCase()}`,
             `Field mapping ambiguity in ${category.name.toLowerCase()}`,
           ]
-          const randomWarning = warningMessages[Math.floor(Math.random() * warningMessages.length)]
           const newWarning = {
             id: Date.now(),
-            message: randomWarning,
+            message: warningMessages[Math.floor(Math.random() * warningMessages.length)],
             category: category.name,
           }
           localWarnings.push(newWarning)
           setWarnings([...localWarnings])
-          addLog(randomWarning, "warning")
+          addLog(newWarning.message, "warning")
         }
 
-        // Move to next category
-        currentCatIdx += 1
-        catProgress = 0
-
-        setCurrentCategory(currentCatIdx)
+        catIdx += 1
+        catProg = 0
+        setCurrentCategory(catIdx)
         setCategoryProgress(0)
 
-        if (currentCatIdx < dataCategories.length) {
-          setDataElements(createDataElements(15))
-          addLog(`Starting migration of ${dataCategories[currentCatIdx].name}`)
+        if (catIdx < dataCategories.length) {
+          addLog(`Starting migration of ${dataCategories[catIdx].name}`)
+        } else {
+          finalizing = true
+          setStatus("Finalizing migration…")
+          setProgress(100)
+          setEtaSeconds(null)
+          addLog("Running final integrity checks…", "info")
+          setTimeout(() => {
+            setIsComplete(true)
+            addLog("Migration complete! All data has been transferred.", "success")
+          }, 1200)
+          return
         }
       } else {
-        // Just update progress of current category
-        setCategoryProgress(Math.round(catProgress))
+        setCategoryProgress(catProg)
       }
 
-      // Calculate total progress
-      const totalItems = dataCategories.reduce((acc, cat) => acc + cat.total, 0)
-      const completedItemsCount = Object.values(localMigratedItems).reduce((acc, val) => acc + val, 0)
-      const itemsInCurrentCategory = Math.min(Math.floor((catProgress * category.total) / 100), category.total)
-      const newTotal = completedItemsCount + itemsInCurrentCategory
-      setProgress(Math.min(Math.floor((newTotal * 100) / totalItems), 100))
+      // Totals derived from records, ETA derived from planned durations
+      const completedRecords = Object.values(localMigrated).reduce((acc, val) => acc + val, 0)
+      const inFlight = catIdx < dataCategories.length ? Math.floor((catProg * dataCategories[catIdx].total) / 100) : 0
+      setProgress(Math.min(((completedRecords + inFlight) * 100) / TOTAL_RECORDS, 100))
 
-      if (currentCatIdx < dataCategories.length) {
-        setStatus(`Migrating ${dataCategories[currentCatIdx].name}...`)
+      let remainingMs = 0
+      for (let i = catIdx; i < dataCategories.length; i++) {
+        remainingMs += plannedDurationMs[i] * (i === catIdx ? 1 - catProg / 100 : 1)
       }
+      const eta = Math.ceil(remainingMs / 1000)
+      setEtaSeconds(eta > 20 ? Math.ceil(eta / 5) * 5 : eta)
 
-      if (Math.random() > 0.8 && currentCatIdx < dataCategories.length) {
-        const actions = ["Processing", "Validating", "Mapping", "Transferring"]
-        const randomAction = actions[Math.floor(Math.random() * actions.length)]
-        addLog(`${randomAction} ${dataCategories[currentCatIdx].name.toLowerCase()} data...`)
+      if (catIdx < dataCategories.length) {
+        setStatus(`Migrating ${dataCategories[catIdx].name}…`)
       }
-    }, 80) // 80ms for faster, smoother simulation
+    }, 80)
 
     return () => clearInterval(interval)
   }, [showInitialAnimation])
 
+  const migratedCount = Object.values(migratedItems).reduce((acc, val) => acc + val, 0)
+  const inFlightCount =
+    currentCategory < dataCategories.length
+      ? Math.floor((categoryProgress * dataCategories[currentCategory].total) / 100)
+      : 0
+  const liveRecordCount = migratedCount + inFlightCount
+  const activeCat = currentCategory < dataCategories.length ? dataCategories[currentCategory] : null
+  const activeHex = activeCat?.hex ?? "#7c3aed"
+  const elapsedLabel = `${Math.floor(elapsed / 60)}:${String(elapsed % 60).padStart(2, "0")}`
+
   return (
     <div className="flex min-h-screen flex-col bg-gradient-to-br from-background via-background to-muted/20">
-      <div className="container py-8 max-w-5xl mx-auto">
+      <div className="container py-8 max-w-6xl mx-auto">
         <div className="mb-8">
           <Link
             href="/dashboard"
@@ -249,33 +304,32 @@ export default function ImportProgress() {
 
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight gradient-text">MMC Convert Migration in Progress</h1>
+            <h1 className="text-3xl font-bold tracking-tight gradient-text pb-1">MMC Convert Migration in Progress</h1>
             <p className="text-muted-foreground mt-1">Xero to MYOB data migration</p>
           </div>
 
           {showInitialAnimation ? (
             <Card className="google-card bg-card/65 border border-border/50 backdrop-blur-md shadow-sm overflow-hidden relative">
-              <CardContent className="p-8">
-                <div className="flex flex-col items-center justify-center space-y-6">
-                  <div className="relative h-32 w-32">
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="h-32 w-32 animate-ping rounded-full bg-primary/20"></div>
-                    </div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="h-24 w-24 animate-ping rounded-full bg-primary/40 animation-delay-200"></div>
-                    </div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="h-16 w-16 animate-pulse rounded-full bg-primary"></div>
-                    </div>
-                    <div className="absolute inset-0 flex items-center justify-center text-primary-foreground">
-                      <Database className="h-8 w-8 text-white" />
+              <CardContent className="p-10">
+                <div className="flex flex-col items-center justify-center space-y-7">
+                  <div className="relative h-28 w-28">
+                    <div className="absolute -inset-4 rounded-full bg-primary/15 blur-2xl animate-pulse" />
+                    <div className="conic-ring absolute inset-0 rounded-full animate-spin-slower" />
+                    <div className="absolute inset-[5px] rounded-full bg-card flex items-center justify-center shadow-inner">
+                      <Database className="h-9 w-9 text-primary animate-pulse" />
                     </div>
                   </div>
                   <div className="text-center">
                     <h2 className="text-xl font-semibold">Initializing Migration</h2>
-                    <p className="text-muted-foreground">Connecting to APIs and preparing data...</p>
+                    <p className="text-muted-foreground mt-1">
+                      Establishing secure connections
+                      <span className="typing-dots" aria-hidden="true">
+                        <span>.</span>
+                        <span>.</span>
+                        <span>.</span>
+                      </span>
+                    </p>
                   </div>
-                  <Progress value={30} className="w-64 animate-pulse" />
                 </div>
               </CardContent>
             </Card>
@@ -284,7 +338,9 @@ export default function ImportProgress() {
               <div className="lg:col-span-2">
                 <Card className="google-card bg-card/65 border border-border/50 backdrop-blur-md shadow-sm overflow-hidden relative">
                   <CardHeader>
-                    <CardTitle className="text-xl font-bold tracking-tight text-foreground">{isComplete ? "Migration Complete" : "Importing Data"}</CardTitle>
+                    <CardTitle className="text-xl font-bold tracking-tight text-foreground">
+                      {isComplete ? "Migration Complete" : "Importing Data"}
+                    </CardTitle>
                     <CardDescription className="text-muted-foreground mt-1">
                       {isComplete
                         ? "Your data has been successfully migrated"
@@ -292,242 +348,336 @@ export default function ImportProgress() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    {payrollDone ? (
-                      <div className="space-y-6">
-                        <div className="flex flex-col items-center justify-center py-10">
-                          <div className="mb-6 rounded-full bg-green-100 p-4 text-green-600">
-                            <CheckCircle className="h-16 w-16" />
+                    {isComplete ? (
+                      <div className="space-y-8">
+                        <div className="relative flex flex-col items-center justify-center py-10 overflow-hidden">
+                          {!reducedMotion &&
+                            confettiPieces.map((piece) => (
+                              <span
+                                key={piece.id}
+                                className="confetti-piece"
+                                style={
+                                  {
+                                    left: `${piece.left}%`,
+                                    backgroundColor: piece.color,
+                                    animationDelay: `${piece.delay}ms`,
+                                    "--drift": `${piece.drift}px`,
+                                  } as React.CSSProperties
+                                }
+                              />
+                            ))}
+                          <div className="relative mb-7">
+                            <div className="absolute -inset-5 rounded-full journey-gradient-bg opacity-25 blur-2xl" />
+                            <div className="check-pop relative flex h-24 w-24 items-center justify-center rounded-full journey-gradient-bg shadow-xl">
+                              <Check className="h-12 w-12 text-white" strokeWidth={3} />
+                            </div>
                           </div>
-                          <h3 className="text-2xl font-medium">Migration Successful</h3>
-                          <p className="text-muted-foreground mt-1">
-                            All your data has been successfully migrated to MYOB
+                          <h3 className="text-2xl font-semibold animate-fade-in-up">Migration Successful</h3>
+                          <p className="text-muted-foreground mt-1 animate-fade-in-up animation-delay-200">
+                            All your data has been migrated to MYOB in {elapsedLabel}
                           </p>
                         </div>
 
                         <div className="grid gap-4 md:grid-cols-3">
                           <Card className="border border-border/40 bg-card shadow-sm">
-                            <CardContent className="p-4">
-                              <div className="text-center">
-                                <div className="text-2xl font-bold text-foreground">
-                                  {dataCategories.reduce((acc, cat) => acc + cat.total, 0)}
-                                </div>
-                                <div className="text-xs text-muted-foreground mt-1">Total Records</div>
+                            <CardContent className="p-4 text-center">
+                              <div className="text-2xl font-bold text-foreground">
+                                <AnimatedCounter from={0} to={TOTAL_RECORDS} duration={1.4} />
                               </div>
+                              <div className="text-xs text-muted-foreground mt-1">Total Records</div>
                             </CardContent>
                           </Card>
                           <Card className="border border-border/40 bg-card shadow-sm">
-                            <CardContent className="p-4">
-                              <div className="text-center">
-                                <div className="text-2xl font-bold text-green-600">
-                                  {dataCategories.reduce((acc, cat) => acc + cat.total, 0) - errors.length}
-                                </div>
-                                <div className="text-xs text-muted-foreground mt-1">Records Migrated</div>
+                            <CardContent className="p-4 text-center">
+                              <div className="text-2xl font-bold text-green-600">
+                                <AnimatedCounter from={0} to={TOTAL_RECORDS - errors.length} duration={1.4} />
                               </div>
+                              <div className="text-xs text-muted-foreground mt-1">Records Migrated</div>
                             </CardContent>
                           </Card>
                           <Card className="border border-border/40 bg-card shadow-sm">
-                            <CardContent className="p-4">
-                              <div className="text-center">
-                                <div className="text-2xl font-bold text-amber-600">{warnings.length}</div>
-                                <div className="text-xs text-muted-foreground mt-1">Warnings</div>
-                              </div>
+                            <CardContent className="p-4 text-center">
+                              <div className="text-2xl font-bold text-amber-600">{warnings.length}</div>
+                              <div className="text-xs text-muted-foreground mt-1">Warnings</div>
                             </CardContent>
                           </Card>
                         </div>
                       </div>
                     ) : (
                       <div className="space-y-6">
+                        {/* Overall progress */}
                         <div className="space-y-2">
                           <div className="flex justify-between text-sm">
                             <div className="font-medium text-foreground">{status}</div>
-                            <div className="font-bold text-primary">{Math.round(progress)}%</div>
+                            <div className="font-bold text-primary tabular-nums">{Math.round(progress)}%</div>
                           </div>
                           <div className="relative h-3 w-full overflow-hidden rounded-full bg-secondary">
-                            {/* Glow effect behind the progress bar */}
                             <div
-                              className="absolute inset-0 opacity-20 blur-sm rounded-full bg-primary transition-all duration-300"
+                              className="absolute inset-y-0 left-0 rounded-full journey-gradient-bg transition-all duration-300 ease-out"
                               style={{ width: `${progress}%` }}
-                            ></div>
-
-
-                            {/* Main progress bar with gradient */}
+                            />
                             <div
-                              className="absolute inset-0 rounded-full bg-primary transition-all duration-300"
+                              className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-transparent via-white/40 to-transparent import-shine-animation"
                               style={{ width: `${progress}%` }}
-                            ></div>
-
-                            {/* Animated shine effect */}
-                            <div
-                              className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/30 to-transparent import-shine-animation"
-                              style={{ width: `${progress}%` }}
-                            ></div>
-
-                            {/* Data particles */}
-                            {Array.from({ length: 8 }).map((_, i) => (
-                              <div
-                                key={i}
-                                className="absolute top-0 h-full w-1 bg-primary/80 rounded-full import-data-particle-animation"
-                                style={{
-                                  left: `${Math.min(progress - 5, 95)}%`,
-                                  animationDelay: `${i * 0.3}s`,
-                                }}
-                              ></div>
-                            ))}
-
-                            {/* Segmented markers */}
-                            <div className="absolute inset-0 flex">
-                              {[20, 40, 60, 80].map((segment) => (
-                                <div
-                                  key={segment}
-                                  className="h-full flex-1 border-r border-background/20"
-                                  aria-hidden="true"
-                                />
-                              ))}
-                            </div>
+                            />
+                          </div>
+                          <div className="flex justify-between text-[11px] font-mono text-muted-foreground">
+                            <span>
+                              {liveRecordCount.toLocaleString()} / {TOTAL_RECORDS.toLocaleString()} records
+                            </span>
+                            {etaSeconds !== null && <span>~{etaSeconds}s remaining</span>}
                           </div>
                         </div>
 
-                        <div className="relative border border-border/40 rounded-2xl p-6 h-64 overflow-hidden bg-muted/20 backdrop-blur-sm shadow-inner flex items-center justify-between gap-4">
-                          {/* Left node: Xero */}
-                          <div className="flex flex-col items-center z-10 shrink-0">
-                            <div className="text-xs font-semibold mb-3 text-muted-foreground uppercase tracking-wider">Source</div>
-                            <div className="relative group">
-                              <div className="absolute -inset-1 rounded-2xl bg-blue-500/20 blur-sm group-hover:bg-blue-500/30 transition-all duration-300 animate-pulse"></div>
-                              <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border border-blue-500/20 bg-card flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-105">
-                                <img alt="Xero Logo" className="h-12 sm:h-14 w-auto max-w-full object-contain px-2" src="/images/Xero-logo.png" />
-                              </div>
+                        {/* The conduit: dark command-center panel */}
+                        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#150f24] p-5 shadow-2xl">
+                          <div className="pointer-events-none absolute -top-24 left-1/4 h-64 w-64 rounded-full bg-[#7c3aed]/20 blur-3xl" />
+                          <div className="pointer-events-none absolute -bottom-24 right-1/4 h-64 w-64 rounded-full bg-[#ec4899]/15 blur-3xl" />
+
+                          {/* Current category chip */}
+                          {activeCat && (
+                            <div
+                              key={currentCategory}
+                              className="animate-fade-in-up relative z-20 mx-auto mb-4 flex w-fit items-center gap-2.5 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 backdrop-blur-md"
+                            >
+                              <span
+                                className="flex h-5 w-5 items-center justify-center rounded-full"
+                                style={{ backgroundColor: activeHex }}
+                              >
+                                <activeCat.icon className="h-3 w-3 text-white" />
+                              </span>
+                              <span className="text-xs font-semibold text-white">{activeCat.name}</span>
+                              <span className="text-[10px] font-medium text-white/50">
+                                {stallMessage ?? phaseFor(categoryProgress)}
+                              </span>
+                              {stallMessage && (
+                                <span className="h-1.5 w-1.5 rounded-full bg-amber-400 animate-pulse-dot" />
+                              )}
                             </div>
-                          </div>
+                          )}
 
-                          {/* Center Channel: Data Pipeline */}
-                          <div className="relative flex-1 h-32 flex flex-col justify-between mx-2 sm:mx-6">
-                            {/* The glowing tracks */}
-                            <div className="absolute inset-0 flex flex-col justify-between py-1">
-                              {/* Lane 1 */}
-                              <div className="relative w-full h-[1px] bg-gradient-to-r from-blue-500/10 via-primary/30 to-green-500/10">
-                                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-primary to-green-500 opacity-20 blur-[1px]"></div>
+                          <div className="relative flex items-center gap-3">
+                            {/* Source */}
+                            <div className="relative z-10 flex shrink-0 flex-col items-center gap-2">
+                              <div className="relative">
+                                <div className="absolute -inset-1.5 rounded-2xl bg-[#13b5ea]/25 blur-md animate-pulse" />
+                                <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-white p-3 shadow-lg sm:h-24 sm:w-24">
+                                  <img src="/images/Xero-logo.png" alt="Xero" className="h-full w-full object-contain" />
+                                </div>
                               </div>
-                              {/* Lane 2 */}
-                              <div className="relative w-full h-[1px] bg-gradient-to-r from-blue-500/10 via-primary/30 to-green-500/10">
-                                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-primary to-green-500 opacity-20 blur-[1px]"></div>
-                              </div>
-                              {/* Lane 3 */}
-                              <div className="relative w-full h-[1px] bg-gradient-to-r from-blue-500/10 via-primary/30 to-green-500/10">
-                                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-primary to-green-500 opacity-20 blur-[1px]"></div>
-                              </div>
+                              <span className="text-[10px] font-semibold uppercase tracking-widest text-white/40">
+                                Source
+                              </span>
                             </div>
 
-                            {/* Flying Data Packets */}
-                            {dataElements.map((element) => {
-                              const yPos = element.lane === 0 ? "0%" : element.lane === 1 ? "50%" : "100%"
-                              const colorClass =
-                                currentCategory < dataCategories.length
-                                  ? dataCategories[currentCategory].color.replace("bg-", "text-")
-                                  : "text-primary"
-                              const bgClass =
-                                currentCategory < dataCategories.length
-                                  ? dataCategories[currentCategory].color
-                                  : "bg-primary"
+                            {/* Conduit */}
+                            <div className="relative min-w-0 flex-1">
+                              <svg viewBox="0 0 640 220" className="h-auto w-full" aria-hidden="true">
+                                <defs>
+                                  <linearGradient id="laneIn" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stopColor="#13b5ea" stopOpacity="0.45" />
+                                    <stop offset="100%" stopColor="#8b5cf6" stopOpacity="0.5" />
+                                  </linearGradient>
+                                  <linearGradient id="laneOut" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stopColor="#8b5cf6" stopOpacity="0.5" />
+                                    <stop offset="100%" stopColor="#ec4899" stopOpacity="0.45" />
+                                  </linearGradient>
+                                </defs>
 
-                              return (
-                                <div
-                                  key={element.id}
-                                  className="absolute data-pipeline-packet"
-                                  style={{
-                                    top: `calc(${yPos} - 10px)`, // offset half packet height
-                                    animationDelay: `${element.delay}ms`,
-                                  }}
-                                >
-                                  <div className="relative flex items-center justify-center animate-bounce-slow">
-                                    <div className={`absolute -inset-1 rounded-full ${bgClass} opacity-30 blur-[2px]`}></div>
-                                    {element.type === 0 ? (
-                                      <FileSpreadsheet className={`h-5 w-5 ${colorClass} relative z-10`} />
-                                    ) : element.type === 1 ? (
-                                      <Database className={`h-4.5 w-4.5 ${colorClass} relative z-10`} />
-                                    ) : (
-                                      <User className={`h-4.5 w-4.5 ${colorClass} relative z-10`} />
-                                    )}
+                                {inputPaths.map((d, i) => (
+                                  <g key={`in-${i}`}>
+                                    <path d={d} fill="none" stroke="url(#laneIn)" strokeWidth="1.5" opacity="0.5" />
+                                    <path
+                                      d={d}
+                                      fill="none"
+                                      stroke="url(#laneIn)"
+                                      strokeWidth="2.5"
+                                      strokeLinecap="round"
+                                      strokeDasharray="3 22"
+                                      className="stream-dash"
+                                      style={{ animationDelay: `${i * -0.6}s` }}
+                                    />
+                                  </g>
+                                ))}
+                                {outputPaths.map((d, i) => (
+                                  <g key={`out-${i}`}>
+                                    <path d={d} fill="none" stroke="url(#laneOut)" strokeWidth="1.5" opacity="0.5" />
+                                    <path
+                                      d={d}
+                                      fill="none"
+                                      stroke="url(#laneOut)"
+                                      strokeWidth="2.5"
+                                      strokeLinecap="round"
+                                      strokeDasharray="3 22"
+                                      className="stream-dash"
+                                      style={{ animationDelay: `${i * -0.6 - 0.3}s` }}
+                                    />
+                                  </g>
+                                ))}
+
+                                {/* Packets: category-colored in, brand-magenta out (transformed) */}
+                                {!reducedMotion &&
+                                  inputPaths.map((d, lane) =>
+                                    [0, 1].map((n) => (
+                                      <g key={`pin-${lane}-${n}`}>
+                                        <circle r="7" fill={activeHex} opacity="0.25">
+                                          <animateMotion
+                                            dur={`${2 + lane * 0.3}s`}
+                                            begin={`${-(n * 1.1 + lane * 0.5)}s`}
+                                            repeatCount="indefinite"
+                                            path={d}
+                                          />
+                                        </circle>
+                                        <circle r="3.5" fill={activeHex}>
+                                          <animateMotion
+                                            dur={`${2 + lane * 0.3}s`}
+                                            begin={`${-(n * 1.1 + lane * 0.5)}s`}
+                                            repeatCount="indefinite"
+                                            path={d}
+                                          />
+                                        </circle>
+                                      </g>
+                                    )),
+                                  )}
+                                {!reducedMotion &&
+                                  outputPaths.map((d, lane) =>
+                                    [0, 1].map((n) => (
+                                      <g key={`pout-${lane}-${n}`}>
+                                        <circle r="6" fill="#ec4899" opacity="0.25">
+                                          <animateMotion
+                                            dur={`${1.9 + lane * 0.25}s`}
+                                            begin={`${-(n * 1 + lane * 0.45)}s`}
+                                            repeatCount="indefinite"
+                                            path={d}
+                                          />
+                                        </circle>
+                                        <circle r="3" fill="#ec4899">
+                                          <animateMotion
+                                            dur={`${1.9 + lane * 0.25}s`}
+                                            begin={`${-(n * 1 + lane * 0.45)}s`}
+                                            repeatCount="indefinite"
+                                            path={d}
+                                          />
+                                        </circle>
+                                      </g>
+                                    )),
+                                  )}
+                              </svg>
+
+                              {/* Transformation core */}
+                              <div className="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
+                                <div key={`core-${currentCategory}`} className="core-pulse relative h-20 w-20 sm:h-24 sm:w-24">
+                                  <div className="absolute -inset-3 rounded-full bg-[#8b5cf6]/25 blur-xl animate-pulse" />
+                                  <div className="conic-ring absolute inset-0 rounded-full animate-spin-slower" />
+                                  <div className="absolute inset-[4px] flex flex-col items-center justify-center rounded-full bg-[#1c1430] shadow-inner">
+                                    <span className="text-lg font-bold text-white tabular-nums sm:text-xl">
+                                      {Math.round(progress)}%
+                                    </span>
+                                    <span className="text-[8px] font-semibold uppercase tracking-widest text-white/40">
+                                      Migrating
+                                    </span>
                                   </div>
                                 </div>
-                              )
-                            })}
-
-                            {/* Center Category Badge (positioned at top to avoid overlapping lanes) */}
-                            {currentCategory < dataCategories.length && (
-                              <div className="absolute z-20 left-1/2 -top-10 transform -translate-x-1/2 bg-background/95 backdrop-blur-md px-3.5 py-1.5 border border-primary/20 rounded-full text-[10px] sm:text-xs font-semibold shadow-md text-foreground flex items-center gap-1.5 animate-pulse-scale whitespace-nowrap">
-                                <div className={`w-2 h-2 rounded-full ${dataCategories[currentCategory].color}`}></div>
-                                <span>{dataCategories[currentCategory].name}</span>
                               </div>
-                            )}
-                          </div>
+                            </div>
 
-                          {/* Right node: MYOB */}
-                          <div className="flex flex-col items-center z-10 shrink-0">
-                            <div className="text-xs font-semibold mb-3 text-muted-foreground uppercase tracking-wider">Destination</div>
-                            <div className="relative group">
-                              <div className="absolute -inset-1 rounded-2xl bg-primary/20 blur-sm group-hover:bg-primary/30 transition-all duration-300 animate-pulse"></div>
-                              <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-2xl border border-primary/20 bg-card flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-105">
-                                <img alt="MYOB Logo" className="h-12 sm:h-14 w-auto max-w-full object-contain px-2" src="/images/myob-logo.png" />
+                            {/* Destination */}
+                            <div className="relative z-10 flex shrink-0 flex-col items-center gap-2">
+                              <div className="relative">
+                                <div
+                                  className="absolute -inset-1.5 rounded-2xl bg-[#ec4899]/30 blur-md animate-pulse transition-opacity duration-1000"
+                                  style={{ opacity: 0.35 + (progress / 100) * 0.65 }}
+                                />
+                                <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-white p-3 shadow-lg sm:h-24 sm:w-24">
+                                  <img src="/images/myob-logo.png" alt="MYOB" className="h-full w-full object-contain" />
+                                </div>
                               </div>
+                              <span className="text-[10px] font-semibold uppercase tracking-widest text-white/40">
+                                Destination
+                              </span>
                             </div>
                           </div>
                         </div>
 
+                        {/* Category checklist */}
                         <div className="rounded-2xl border border-border/40 bg-card/50 p-6 shadow-sm">
                           <h3 className="mb-4 text-base font-semibold text-foreground">Migration Progress</h3>
-                          <div className="space-y-4">
+                          <div className="grid gap-x-8 gap-y-3 md:grid-cols-2">
                             {dataCategories.map((category, index) => {
-                              let status = "pending"
-                              let completedCount = 0
-
-                              if (index < currentCategory) {
-                                status = "complete"
-                                completedCount = category.total
-                              } else if (index === currentCategory) {
-                                status = "in-progress"
-                                completedCount = Math.floor((categoryProgress * category.total) / 100)
-                              }
+                              const isDone = index < currentCategory
+                              const isActive = index === currentCategory
+                              const completedCount = isDone
+                                ? category.total
+                                : isActive
+                                  ? Math.floor((categoryProgress * category.total) / 100)
+                                  : 0
+                              const CategoryIcon = category.icon
 
                               return (
-                                <div key={category.name} className="space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <div className={`p-1.5 rounded-full ${category.color} text-white`}>
-                                        {category.icon}
+                                <div
+                                  key={category.name}
+                                  className={`space-y-1.5 rounded-xl px-3 py-2 transition-all duration-300 ${
+                                    isActive
+                                      ? "bg-accent/60 ring-1 ring-primary/25"
+                                      : isDone
+                                        ? "opacity-80"
+                                        : "opacity-45"
+                                  }`}
+                                >
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="flex min-w-0 items-center gap-2.5">
+                                      <div className="relative shrink-0">
+                                        <div
+                                          className="flex h-7 w-7 items-center justify-center rounded-lg text-white shadow-sm"
+                                          style={{ backgroundColor: category.hex }}
+                                        >
+                                          <CategoryIcon className="h-3.5 w-3.5" />
+                                        </div>
+                                        {isActive && (
+                                          <svg className="absolute -inset-[5px] h-[38px] w-[38px] -rotate-90" viewBox="0 0 38 38">
+                                            <circle
+                                              cx="19"
+                                              cy="19"
+                                              r="16.5"
+                                              fill="none"
+                                              stroke={category.hex}
+                                              strokeWidth="2"
+                                              strokeLinecap="round"
+                                              strokeDasharray={`${(categoryProgress / 100) * 103.7} 103.7`}
+                                              className="transition-all duration-300"
+                                            />
+                                          </svg>
+                                        )}
                                       </div>
-                                      <span className="text-sm font-medium">{category.name}</span>
+                                      <span className="truncate text-sm font-medium">{category.name}</span>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-xs text-muted-foreground">
+                                    <div className="flex shrink-0 items-center gap-2">
+                                      <span className="font-mono text-xs tabular-nums text-muted-foreground">
                                         {completedCount}/{category.total}
                                       </span>
-                                      {status === "complete" ? (
-                                        <CheckCircle className="h-4 w-4 text-green-500" />
-                                      ) : status === "in-progress" ? (
-                                        <RefreshCw className="h-4 w-4 animate-spin text-blue-500" />
+                                      {isDone ? (
+                                        <span className="check-pop inline-flex">
+                                          <CheckCircle className="h-4 w-4 text-green-500" />
+                                        </span>
+                                      ) : isActive ? (
+                                        <span
+                                          className="text-xs font-semibold tabular-nums"
+                                          style={{ color: category.hex }}
+                                        >
+                                          {Math.round(categoryProgress)}%
+                                        </span>
                                       ) : (
-                                        <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/20"></div>
+                                        <span className="h-4 w-4 rounded-full border-2 border-muted-foreground/20" />
                                       )}
                                     </div>
                                   </div>
-                                  <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                                  <div className="relative h-1 w-full overflow-hidden rounded-full bg-secondary">
                                     <div
-                                      className="absolute inset-0 rounded-full bg-primary transition-all duration-300"
-                                      style={{
-                                        width:
-                                          index < currentCategory
-                                            ? "100%"
-                                            : index === currentCategory
-                                              ? `${categoryProgress}%`
-                                              : "0%",
-                                      }}
-                                    ></div>
-                                    {index === currentCategory && (
-                                      <div
-                                        className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/30 to-transparent import-shine-animation"
-                                        style={{ width: `${categoryProgress}%` }}
-                                      ></div>
-                                    )}
+                                      className={`absolute inset-y-0 left-0 rounded-full transition-all duration-300 ${
+                                        isDone ? "bg-primary/50" : "journey-gradient-bg"
+                                      }`}
+                                      style={{ width: isDone ? "100%" : isActive ? `${categoryProgress}%` : "0%" }}
+                                    />
                                   </div>
                                 </div>
                               )
@@ -538,30 +688,38 @@ export default function ImportProgress() {
                     )}
                   </CardContent>
                   <CardFooter className="flex justify-between border-t border-border/30 pt-6 mt-4">
-                    {payrollDone ? (
+                    {isComplete ? (
                       <>
-                        <Button variant="outline" className="rounded-xl border-border bg-card hover:bg-muted text-foreground transition-all duration-200" asChild>
+                        <Button
+                          variant="outline"
+                          className="rounded-xl border-border bg-card hover:bg-muted text-foreground transition-all duration-200"
+                          asChild
+                        >
                           <Link href="/dashboard">
                             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
                           </Link>
                         </Button>
-                        <Button className="google-button-primary" asChild>
+                        <Button className="premium-button rounded-xl" asChild>
                           <Link href="/dashboard/new-migration/report">
                             View Detailed Report <ArrowRight className="ml-2 h-4 w-4" />
                           </Link>
                         </Button>
                       </>
                     ) : (
-                      <Button variant="outline" className="ml-auto rounded-xl border-border text-muted-foreground bg-transparent" disabled>
+                      <Button
+                        variant="outline"
+                        className="ml-auto rounded-xl border-border text-muted-foreground bg-transparent"
+                        disabled
+                      >
                         Cancel
                       </Button>
                     )}
                   </CardFooter>
-
                 </Card>
               </div>
 
               <div className="space-y-6">
+                {/* Status card */}
                 <Card className="google-card bg-card/65 border border-border/50 backdrop-blur-md shadow-sm overflow-hidden relative">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base font-semibold text-foreground">Migration Status</CardTitle>
@@ -569,79 +727,88 @@ export default function ImportProgress() {
                   <CardContent>
                     <div className="rounded-xl border border-border/50 bg-muted/40 p-3.5 shadow-inner">
                       <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                        <RefreshCw className={`h-4 w-4 text-primary ${payrollDone ? "" : "animate-spin"}`} />
-                        <div>{payrollDone ? "Migration Complete" : "Migration in Progress"}</div>
+                        <RefreshCw className={`h-4 w-4 text-primary ${isComplete ? "" : "animate-spin"}`} />
+                        <div>{isComplete ? "Migration Complete" : "Migration in Progress"}</div>
                       </div>
                       <div className="mt-2 text-xs text-muted-foreground">
-                        {payrollDone
+                        {isComplete
                           ? "Your data has been successfully migrated to MYOB"
-                          : "Please wait while your data is being migrated"}
+                          : (stallMessage ?? status)}
                       </div>
                     </div>
 
                     <div className="mt-4 grid grid-cols-2 gap-3">
                       <div className="rounded-xl border border-border/40 bg-muted/20 p-3.5 shadow-sm">
-                        <div className="text-2xl font-bold text-foreground">
-                          {Object.values(migratedItems).reduce((acc, val) => acc + val, 0)}
+                        <div className="text-2xl font-bold text-foreground tabular-nums">
+                          {liveRecordCount.toLocaleString()}
                         </div>
-                        <div className="text-xs text-muted-foreground mt-0.5">Successfully Migrated</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">Records Migrated</div>
                       </div>
                       <div className="rounded-xl border border-border/40 bg-muted/20 p-3.5 shadow-sm">
-                        <div className="text-2xl font-bold text-primary">{payrollDone ? "100%" : isComplete ? "90%" : `${Math.round(progress * 0.9)}%`}</div>
+                        <div className="text-2xl font-bold text-primary tabular-nums">
+                          {isComplete ? "100%" : `${Math.round(progress)}%`}
+                        </div>
                         <div className="text-xs text-muted-foreground mt-0.5">Complete</div>
                       </div>
                       <div className="rounded-xl border border-border/40 bg-muted/20 p-3.5 shadow-sm">
-                        <div className="text-2xl font-bold text-amber-600">{warnings.length}</div>
+                        <div className="text-2xl font-bold text-amber-600 tabular-nums">{warnings.length}</div>
                         <div className="text-xs text-muted-foreground mt-0.5">Warnings</div>
                       </div>
                       <div className="rounded-xl border border-border/40 bg-muted/20 p-3.5 shadow-sm">
-                        <div className="text-2xl font-bold text-destructive">{errors.length}</div>
-                        <div className="text-xs text-muted-foreground mt-0.5">Errors</div>
+                        <div className="text-2xl font-bold text-foreground tabular-nums">{elapsedLabel}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">Elapsed</div>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
+                {/* Terminal log */}
                 <Card className="google-card bg-card/65 border border-border/50 backdrop-blur-md shadow-sm overflow-hidden">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-semibold text-foreground">Live Migration Log</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="max-h-[360px] overflow-auto border border-border/30 rounded-xl bg-black/5 mx-6 mb-6">
-                      <div className="space-y-0 p-1">
+                  <CardContent className="p-4">
+                    <div className="overflow-hidden rounded-xl border border-white/10 bg-[#120d1d] shadow-inner">
+                      <div className="flex items-center justify-between border-b border-white/10 px-3 py-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                          <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                          <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                          <span className="ml-2 font-mono text-[10px] text-white/40">migration.log</span>
+                        </div>
+                        {!isComplete && (
+                          <span className="flex items-center gap-1.5 font-mono text-[9px] font-semibold tracking-widest text-green-400">
+                            <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse-dot" />
+                            LIVE
+                          </span>
+                        )}
+                      </div>
+                      <div className="max-h-[380px] overflow-auto p-2 font-mono text-[11px] leading-relaxed">
+                        {!isComplete && (
+                          <div className="px-2 py-0.5 text-white/60">
+                            <span className="terminal-caret">▍</span>
+                          </div>
+                        )}
                         {logs.map((log) => (
                           <div
                             key={log.id}
-                            className={`border-l-4 animate-fadeIn px-3 py-2.5 text-xs border-b border-border/10 last:border-b-0 ${
-                              log.type === "error"
-                                ? "border-destructive bg-destructive/10 text-destructive"
-                                : log.type === "warning"
-                                  ? "border-amber-500 bg-amber-500/10 text-amber-600 dark:text-amber-500"
-                                  : log.type === "success"
-                                    ? "border-green-500 bg-green-500/10 text-green-600 dark:text-green-500"
-                                    : "border-primary bg-primary/10 text-primary"
-                            }`}
+                            className="animate-fadeIn flex gap-2 rounded px-2 py-1 hover:bg-white/5"
                           >
-                            <div className="flex gap-2">
-                              <span className="font-mono opacity-70">{log.time}</span>
-                              <span className="flex-1 font-medium">
-                                {log.type === "error" ? (
-                                  <XCircle className="inline-block mr-1 h-3.5 w-3.5 align-text-bottom" />
-                                ) : log.type === "warning" ? (
-                                  <AlertTriangle className="inline-block mr-1 h-3.5 w-3.5 align-text-bottom" />
-                                ) : log.type === "success" ? (
-                                  <CheckCircle className="inline-block mr-1 h-3.5 w-3.5 align-text-bottom" />
-                                ) : (
-                                  <ChevronRight className="inline-block mr-1 h-3.5 w-3.5 align-text-bottom" />
-                                )}
-                                {log.message}
-                              </span>
-                            </div>
+                            <span className="shrink-0 text-white/30">{log.time}</span>
+                            <span
+                              className={`shrink-0 ${
+                                log.type === "error"
+                                  ? "text-red-400"
+                                  : log.type === "warning"
+                                    ? "text-amber-400"
+                                    : log.type === "success"
+                                      ? "text-green-400"
+                                      : "text-violet-400"
+                              }`}
+                            >
+                              {log.type === "error" ? "✕" : log.type === "warning" ? "⚠" : log.type === "success" ? "✓" : "›"}
+                            </span>
+                            <span className="min-w-0 flex-1 text-white/75">{log.message}</span>
                           </div>
                         ))}
-                        {logs.length === 0 && (
-                          <div className="p-4 text-center text-sm text-muted-foreground">No logs yet...</div>
-                        )}
+                        {logs.length === 0 && <div className="p-3 text-center text-white/40">No logs yet…</div>}
                       </div>
                     </div>
                   </CardContent>
@@ -657,10 +824,10 @@ export default function ImportProgress() {
                         {warnings.map((warning) => (
                           <div
                             key={warning.id}
-                            className="rounded-xl border-l-4 border-amber-500 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-500 shadow-sm"
+                            className="animate-fade-in-up rounded-xl border-l-4 border-amber-500 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-500 shadow-sm"
                           >
                             <div className="flex items-start gap-2">
-                              <AlertTriangle className="h-4 w-4 mt-0.5" />
+                              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
                               <div>
                                 <div className="font-semibold text-sm">{warning.category}</div>
                                 <div className="text-xs opacity-90 mt-0.5">{warning.message}</div>
@@ -686,7 +853,7 @@ export default function ImportProgress() {
                             className="rounded-xl border-l-4 border-destructive bg-destructive/10 p-3 text-xs text-destructive shadow-sm"
                           >
                             <div className="flex items-start gap-2">
-                              <XCircle className="h-4 w-4 mt-0.5" />
+                              <XCircle className="h-4 w-4 mt-0.5 shrink-0" />
                               <div>
                                 <div className="font-semibold text-sm">{error.category}</div>
                                 <div className="text-xs opacity-90 mt-0.5">{error.message}</div>
@@ -704,64 +871,106 @@ export default function ImportProgress() {
         </div>
       </div>
 
-      {/* CSS for animations */}
       <style jsx global>{`
-        @keyframes pipelineFlow {
+        /* Flowing dashes along the conduit lanes */
+        @keyframes streamDash {
+          to {
+            stroke-dashoffset: -25;
+          }
+        }
+        .stream-dash {
+          animation: streamDash 0.9s linear infinite;
+        }
+
+        /* Rotating gradient ring for the transformation core */
+        .conic-ring {
+          background: conic-gradient(
+            from 0deg,
+            transparent 0%,
+            #8b5cf6 20%,
+            #ec4899 45%,
+            #13b5ea 70%,
+            transparent 90%
+          );
+        }
+        @keyframes spinSlower {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+        .animate-spin-slower {
+          animation: spinSlower 4s linear infinite;
+        }
+
+        /* Core flashes when a category hands off */
+        @keyframes corePulse {
           0% {
-            left: 0%;
-            opacity: 0;
-            transform: scale(0.6);
-          }
-          10% {
-            opacity: 1;
             transform: scale(1);
           }
-          90% {
-            opacity: 1;
-            transform: scale(1);
+          35% {
+            transform: scale(1.12);
           }
           100% {
-            left: 100%;
+            transform: scale(1);
+          }
+        }
+        .core-pulse {
+          animation: corePulse 0.6s var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1));
+        }
+
+        /* Springy check-mark pop */
+        @keyframes checkPop {
+          0% {
+            transform: scale(0);
             opacity: 0;
-            transform: scale(0.6);
+          }
+          60% {
+            transform: scale(1.18);
+            opacity: 1;
+          }
+          100% {
+            transform: scale(1);
+            opacity: 1;
           }
         }
-        
-        .data-pipeline-packet {
+        .check-pop {
+          animation: checkPop 0.5s var(--ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)) both;
+        }
+
+        /* One-shot confetti burst on success */
+        @keyframes confettiFall {
+          0% {
+            transform: translateY(-10px) translateX(0) rotate(0deg);
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(240px) translateX(var(--drift, 0px)) rotate(540deg);
+            opacity: 0;
+          }
+        }
+        .confetti-piece {
           position: absolute;
-          animation: pipelineFlow 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+          top: 0;
+          width: 7px;
+          height: 11px;
+          border-radius: 2px;
+          opacity: 0;
+          animation: confettiFall 1.6s ease-out forwards;
+          pointer-events: none;
         }
 
-        .animate-bounce-slow {
-          animation: bounceSlow 2s ease-in-out infinite;
-        }
-
-        @keyframes bounceSlow {
-          0%, 100% {
-            transform: translateY(0);
-          }
-          50% {
-            transform: translateY(-4px);
-          }
-        }
-        
         @keyframes fadeIn {
           from {
             opacity: 0;
-            transform: translateY(-10px);
+            transform: translateY(-6px);
           }
           to {
             opacity: 1;
             transform: translateY(0);
           }
         }
-        
         .animate-fadeIn {
           animation: fadeIn 0.3s ease-out forwards;
-        }
-        
-        .animation-delay-200 {
-          animation-delay: 200ms;
         }
 
         @keyframes importShine {
@@ -772,28 +981,32 @@ export default function ImportProgress() {
             transform: translateX(100%);
           }
         }
-
         .import-shine-animation {
-          animation: importShine 1.5s infinite;
+          animation: importShine 1.8s ease-in-out infinite;
         }
 
-        @keyframes importDataParticle {
-          0% {
-            opacity: 0;
-            transform: translateX(0) scaleY(0.5);
-          }
+        @keyframes caretBlink {
+          0%,
           50% {
             opacity: 1;
-            transform: translateX(100px) scaleY(1);
           }
+          51%,
           100% {
             opacity: 0;
-            transform: translateX(200px) scaleY(0.5);
           }
         }
+        .terminal-caret {
+          animation: caretBlink 1.1s step-end infinite;
+        }
 
-        .import-data-particle-animation {
-          animation: importDataParticle 1.2s infinite;
+        .typing-dots span {
+          animation: caretBlink 1.2s infinite;
+        }
+        .typing-dots span:nth-child(2) {
+          animation-delay: 0.2s;
+        }
+        .typing-dots span:nth-child(3) {
+          animation-delay: 0.4s;
         }
       `}</style>
     </div>

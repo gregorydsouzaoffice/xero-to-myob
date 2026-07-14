@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import MYOBLogo from "../components/mmc-logo"
+import PageTransition from "../components/page-transition"
 
 export const metadata: Metadata = {
   title: "Dashboard | MYOB Migration Tool",
@@ -101,7 +102,9 @@ export default function DashboardLayout({
           </DropdownMenu>
         </div>
       </header>
-      <main className="flex-1 bg-gradient-to-br from-background via-muted/20 to-background">{children}</main>
+      <main className="flex-1 bg-gradient-to-br from-background via-muted/20 to-background">
+        <PageTransition>{children}</PageTransition>
+      </main>
     </div>
   )
 }

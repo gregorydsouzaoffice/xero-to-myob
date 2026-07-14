@@ -51,6 +51,12 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        brand: {
+          teal: "hsl(var(--brand-teal))",
+          purple: "hsl(var(--brand-purple))",
+          violet: "hsl(var(--brand-violet))",
+          pink: "hsl(var(--brand-pink))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -112,7 +118,8 @@ module.exports = {
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
         "gradient-conic": "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
-        "gradient-mesh": "linear-gradient(to right bottom, #6366f1, #8b5cf6, #d946ef)",
+        "gradient-mesh":
+          "linear-gradient(to right bottom, hsl(var(--brand-purple)), hsl(var(--brand-violet)), hsl(var(--brand-pink)))",
       },
     },
   },
