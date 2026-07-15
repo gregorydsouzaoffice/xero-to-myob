@@ -7,31 +7,34 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
   AlertTriangle,
   ArrowLeft,
   ArrowRight,
+  ChevronDown,
+  Banknote,
+  BookOpen,
+  Building2,
   CheckCircle,
   CheckSquare,
+  ClipboardList,
+  CreditCard,
   Database,
+  FileMinus,
+  FilePlus,
   FileText,
   Map,
   MoveRight,
+  Package,
+  Paperclip,
   PenLine,
+  Receipt,
   RotateCcw,
   Settings2,
+  ShoppingCart,
   SkipForward,
   Sparkles,
   Upload,
+  Users,
 } from "lucide-react"
 
 /* ---------------------------------------------------------------------------
@@ -565,6 +568,83 @@ const CATEGORIES: CategoryDef[] = [
   },
 ]
 
+interface SelectOption {
+  value: string
+  label: string
+}
+
+// Native select styled to match the design system — renders its value in the
+// initial HTML (no hydration dependency) and supports grouped options
+function MappingSelect({
+  value,
+  onChange,
+  placeholder,
+  options,
+  groups,
+  review = false,
+  tall = false,
+}: {
+  value: string
+  onChange: (v: string) => void
+  placeholder?: string
+  options?: SelectOption[]
+  groups?: { label: string; options: SelectOption[] }[]
+  review?: boolean
+  tall?: boolean
+}) {
+  return (
+    <div className="relative w-full">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className={`${tall ? "h-10" : "h-9"} w-full cursor-pointer appearance-none truncate rounded-lg border bg-card px-3 pr-9 text-sm text-foreground shadow-sm outline-none transition-colors duration-200 hover:border-primary/40 focus:border-primary focus:ring-2 focus:ring-ring/30 ${
+        review && !value
+          ? "border-amber-500/60 text-amber-700 dark:text-amber-400"
+          : "border-border/60"
+      }`}
+      >
+        {placeholder && (
+          <option value="" disabled>
+            {placeholder}
+          </option>
+        )}
+        {options?.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+        {groups?.map((group) => (
+          <optgroup key={group.label} label={group.label}>
+            {group.options.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+      <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+    </div>
+  )
+}
+
+const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  accounts: Database,
+  customers: Users,
+  vendors: Building2,
+  items: Package,
+  "sales-orders": ShoppingCart,
+  "purchase-orders": ClipboardList,
+  invoices: Receipt,
+  bills: FileText,
+  "invoice-payments": CreditCard,
+  "bill-payments": Banknote,
+  "credit-notes": FileMinus,
+  "bill-credits": FilePlus,
+  journals: BookOpen,
+  attachments: Paperclip,
+}
+
 /* ------------------------------------------------------------------------- */
 
 export default function MapData() {
@@ -873,28 +953,39 @@ export default function MapData() {
               </div>
 
               <Tabs defaultValue="accounts" className="w-full">
-                <TabsList className="mb-6 w-full justify-start rounded-xl p-1 backdrop-blur-md bg-muted border border-border/50 overflow-x-auto">
-                  {CATEGORIES.map((cat) => (
-                    <TabsTrigger
-                      key={cat.key}
-                      value={cat.key}
-                      className="rounded-lg data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm whitespace-nowrap"
-                    >
-                      {cat.label}
-                      {reviewCounts[cat.key] > 0 ? (
-                        <span className="ml-1.5 inline-flex h-4 min-w-4 animate-pulse items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white">
-                          {reviewCounts[cat.key]}
-                        </span>
-                      ) : customCounts[cat.key] > 0 ? (
-                        <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-                          {customCounts[cat.key]}
-                        </span>
-                      ) : null}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
+                <div className="grid gap-6 lg:grid-cols-[250px_minmax(0,1fr)]">
+                  {/* Category rail — every category visible, no scrollbar */}
+                  <TabsList className="h-auto w-full flex-col items-stretch justify-start gap-1 self-start rounded-xl border border-border/50 bg-muted/40 p-2 backdrop-blur-md lg:sticky lg:top-24">
+                    {CATEGORIES.map((cat) => {
+                      const CategoryIcon = CATEGORY_ICONS[cat.key]
+                      return (
+                        <TabsTrigger
+                          key={cat.key}
+                          value={cat.key}
+                          className="w-full justify-between gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-all duration-200 hover:text-foreground data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-sm"
+                        >
+                          <span className="flex min-w-0 items-center gap-2.5">
+                            <CategoryIcon className="h-4 w-4 shrink-0 opacity-70" />
+                            <span className="truncate">{cat.label}</span>
+                          </span>
+                          {reviewCounts[cat.key] > 0 ? (
+                            <span className="inline-flex h-4 min-w-4 shrink-0 animate-pulse items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white">
+                              {reviewCounts[cat.key]}
+                            </span>
+                          ) : customCounts[cat.key] > 0 ? (
+                            <span className="inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                              {customCounts[cat.key]}
+                            </span>
+                          ) : (
+                            <CheckCircle className="h-3.5 w-3.5 shrink-0 text-green-500/60" />
+                          )}
+                        </TabsTrigger>
+                      )
+                    })}
+                  </TabsList>
 
-                {CATEGORIES.map((cat) => (
+                  <div className="min-w-0">
+                    {CATEGORIES.map((cat) => (
                   <TabsContent key={cat.key} value={cat.key} className="space-y-4">
                     {/* Field mapping */}
                     <div className="animate-fade-in-up rounded-2xl border border-border/40 bg-card/50 backdrop-blur-md p-6" style={{ animationFillMode: "both" }}>
@@ -944,37 +1035,21 @@ export default function MapData() {
                                 <MoveRight className="h-4 w-4 text-muted-foreground/50" />
                               </div>
                               <div className="col-span-5">
-                                <Select
-                                  key={value || "unset"}
-                                  value={value || undefined}
-                                  onValueChange={(v) =>
+                                <MappingSelect
+                                  value={value}
+                                  review={state === "review"}
+                                  placeholder="Select MYOB field…"
+                                  onChange={(v) =>
                                     setOverride(fieldOverrides, setFieldOverrides, key, v, field.suggested)
                                   }
-                                >
-                                  <SelectTrigger
-                                    className={`h-9 rounded-lg bg-card text-sm transition-colors hover:border-primary/40 ${
-                                      state === "review"
-                                        ? "border-amber-500/60 text-amber-700 dark:text-amber-400"
-                                        : "border-border/60"
-                                    }`}
-                                  >
-                                    <SelectValue placeholder="Select MYOB field…" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {field.suggested && (
-                                      <SelectItem value={field.suggested}>{field.suggested} · suggested</SelectItem>
-                                    )}
-                                    {field.alternates.map((alt) => (
-                                      <SelectItem key={alt} value={alt}>
-                                        {alt}
-                                      </SelectItem>
-                                    ))}
-                                    <SelectSeparator />
-                                    <SelectItem value={SKIP} className="text-amber-600">
-                                      Do not migrate this field
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
+                                  options={[
+                                    ...(field.suggested
+                                      ? [{ value: field.suggested, label: `${field.suggested} (suggested)` }]
+                                      : []),
+                                    ...field.alternates.map((alt) => ({ value: alt, label: alt })),
+                                    { value: SKIP, label: "— Do not migrate this field" },
+                                  ]}
+                                />
                               </div>
                               <div className="col-span-2 flex items-center justify-end gap-1.5">
                                 {(state === "custom" || state === "skipped") && (
@@ -1046,10 +1121,12 @@ export default function MapData() {
                                     <MoveRight className="h-4 w-4 text-muted-foreground/50" />
                                   </div>
                                   <div className="col-span-5">
-                                    <Select
-                                      key={value || "unset"}
-                                      value={value || undefined}
-                                      onValueChange={(v) =>
+                                    <MappingSelect
+                                      value={value}
+                                      review={state === "review"}
+                                      tall
+                                      placeholder="Choose MYOB account…"
+                                      onChange={(v) =>
                                         setOverride(
                                           accountOverrides,
                                           setAccountOverrides,
@@ -1058,34 +1135,14 @@ export default function MapData() {
                                           account.suggested,
                                         )
                                       }
-                                    >
-                                      <SelectTrigger
-                                        className={`h-10 rounded-lg bg-card text-sm transition-colors hover:border-primary/40 ${
-                                          state === "review"
-                                            ? "border-amber-500/60 text-amber-700 dark:text-amber-400"
-                                            : "border-border/60"
-                                        }`}
-                                      >
-                                        <SelectValue placeholder="Choose MYOB account…" />
-                                      </SelectTrigger>
-                                      <SelectContent className="max-h-72">
-                                        {ACCOUNT_TYPE_ORDER.map((type) => {
-                                          const group = MYOB_ACCOUNTS.filter((a) => a.type === type)
-                                          if (group.length === 0) return null
-                                          return (
-                                            <SelectGroup key={type}>
-                                              <SelectLabel>{type}</SelectLabel>
-                                              {group.map((a) => (
-                                                <SelectItem key={a.code} value={a.code}>
-                                                  <span className="font-mono text-xs">{a.code}</span> · {a.name}
-                                                  {a.code === account.suggested ? " · suggested" : ""}
-                                                </SelectItem>
-                                              ))}
-                                            </SelectGroup>
-                                          )
-                                        })}
-                                      </SelectContent>
-                                    </Select>
+                                      groups={ACCOUNT_TYPE_ORDER.map((type) => ({
+                                        label: type,
+                                        options: MYOB_ACCOUNTS.filter((a) => a.type === type).map((a) => ({
+                                          value: a.code,
+                                          label: `${a.code} · ${a.name}${a.code === account.suggested ? " (suggested)" : ""}`,
+                                        })),
+                                      })).filter((g) => g.options.length > 0)}
+                                    />
                                   </div>
                                   <div className="col-span-2 flex items-center justify-end gap-1.5">
                                     {isCustom && (
@@ -1164,25 +1221,18 @@ export default function MapData() {
                                     }
                                   />
                                 )}
-                                <Select
-                                  value={value}
-                                  onValueChange={(v) =>
-                                    setOverride(ruleOverrides, setRuleOverrides, key, v, rule.suggested)
-                                  }
-                                >
-                                  <SelectTrigger className="h-9 w-[260px] rounded-lg border-border/60 bg-card text-sm transition-colors hover:border-primary/40">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {rule.options.map((opt) => (
-                                      <SelectItem key={opt.value} value={opt.value}>
-                                        {opt.label}
-                                        {opt.value === rule.suggested && opt.hint !== "Recommended" ? " · suggested" : ""}
-                                        {opt.hint === "Recommended" ? " · recommended" : ""}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                <div className="w-[280px]">
+                                  <MappingSelect
+                                    value={value}
+                                    onChange={(v) =>
+                                      setOverride(ruleOverrides, setRuleOverrides, key, v, rule.suggested)
+                                    }
+                                    options={rule.options.map((opt) => ({
+                                      value: opt.value,
+                                      label: `${opt.label}${opt.value === rule.suggested ? " (recommended)" : ""}`,
+                                    }))}
+                                  />
+                                </div>
                                 <StatusBadge state={isCustom ? "custom" : "auto"} />
                               </div>
                             </div>
@@ -1191,7 +1241,9 @@ export default function MapData() {
                       </div>
                     </div>
                   </TabsContent>
-                ))}
+                    ))}
+                  </div>
+                </div>
               </Tabs>
             </CardContent>
             <CardFooter className="flex items-center justify-between border-t border-border/30 pt-6 mt-4">
